@@ -76,8 +76,7 @@ M49_TO_ISO3 = {
     "262": "DJI", "690": "SYC", "894": "ZMB", "716": "ZWE",
 }
 
-# FAOSTAT area codes to M49 — populated from the CSV Area Code column
-# (We'll use M49 codes from the CSV directly)
+ISO3_TO_M49 = {v: k for k, v in M49_TO_ISO3.items()}
 
 # Crop items to EXCLUDE (aggregates, livestock-derived, processed)
 EXCLUDE_KEYWORDS = [
@@ -104,6 +103,54 @@ WB_INDICATORS = {
     "SP.RUR.TOTL.ZS": "ruralPct",
     "SL.AGR.EMPL.ZS": "agEmployPct",
     "SP.POP.TOTL":    "population",
+}
+
+# Crop name → HS 4-digit trade code for Comtrade lookups
+CROP_TO_HS = {
+    "Maize": "1005",
+    "Rice": "1006",
+    "Wheat": "1001",
+    "Sorghum": "1007",
+    "Millet": "1008",
+    "Barley": "1003",
+    "Oats": "1004",
+    "Coffee": "0901",
+    "Cocoa": "1801",
+    "Tea": "0902",
+    "Cassava": "0714",
+    "Potatoes": "0701",
+    "Sweet Potatoes": "0714",
+    "Yams": "0714",
+    "Plantains": "0803",
+    "Bananas": "0803",
+    "Cotton Lint": "5201",
+    "Seed Cotton": "5201",
+    "Sugar Cane": "1701",
+    "Raw Sugar": "1701",
+    "Groundnuts": "1202",
+    "Sesame": "1207",
+    "Soya Beans": "1201",
+    "Sunflower": "1206",
+    "Oil Palm": "1511",
+    "Palm Oil": "1511",
+    "Cashew Nuts": "0801",
+    "Coconuts": "0801",
+    "Avocados": "0804",
+    "Mangoes": "0804",
+    "Oranges": "0805",
+    "Pineapples": "0804",
+    "Lemons & Limes": "0805",
+    "Vanilla": "0905",
+    "Tobacco": "2401",
+    "Beans": "0713",
+    "Cowpeas": "0713",
+    "Onions": "0703",
+    "Tomatoes": "0702",
+    "Cabbages": "0704",
+    "Watermelons": "0807",
+    "Black Pepper": "0904",
+    "Ginger": "0910",
+    "Sisal": "5304",
 }
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
