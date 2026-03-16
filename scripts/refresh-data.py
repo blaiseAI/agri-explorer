@@ -531,6 +531,16 @@ def main():
     
     errors = []
     
+    # Load existing data as fallback baseline
+    existing = {}
+    if os.path.exists(OUTPUT_FILE):
+        try:
+            with open(OUTPUT_FILE, "r") as f:
+                existing = json.load(f)
+            print(f"  📦 Loaded existing data as fallback ({os.path.getsize(OUTPUT_FILE)/1024:.0f} KB)")
+        except (json.JSONDecodeError, IOError):
+            print("  ⚠️ Could not load existing data, starting fresh")
+    
     # 1. FAOSTAT
     try:
         crop_data, countries_info, global_avg_yields = fetch_faostat_data()
@@ -635,16 +645,32 @@ def main():
     
     if crop_data:
         output["cropData"] = crop_data
+    elif "cropData" in existing:
+        output["cropData"] = existing["cropData"]
+        print("  ⚠️ Using previous FAOSTAT data (fetch failed)")
+
     if global_avg_yields:
         output["globalAvgYields"] = global_avg_yields
+    elif "globalAvgYields" in existing:
+        output["globalAvgYields"] = existing["globalAvgYields"]
+
     if wb_data:
         output["worldBankData"] = wb_data
+    elif "worldBankData" in existing:
+        output["worldBankData"] = existing["worldBankData"]
+        print("  ⚠️ Using previous World Bank data (fetch failed)")
+
     if trade_data:
         output["tradeData"] = trade_data
+    elif "tradeData" in existing:
+        output["tradeData"] = existing["tradeData"]
+        print("  ⚠️ Using previous trade data (fetch failed)")
     
     os.makedirs(DATA_DIR, exist_ok=True)
-    with open(OUTPUT_FILE, "w") as f:
+    tmp_file = OUTPUT_FILE + ".tmp"
+    with open(tmp_file, "w") as f:
         json.dump(output, f)  # No indent to save space
+    os.replace(tmp_file, OUTPUT_FILE)
     
     file_size = os.path.getsize(OUTPUT_FILE)
     print(f"\n{'=' * 60}")
