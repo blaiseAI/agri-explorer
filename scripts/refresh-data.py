@@ -96,7 +96,7 @@ ELEMENTS = {
 }
 
 YEAR_START = 2010
-YEAR_END = 2025
+YEAR_END = datetime.now().year
 
 # World Bank indicators
 WB_INDICATORS = {
@@ -300,7 +300,7 @@ def fetch_faostat_data():
             if "production" in elements and "yield" in elements and "area" in elements:
                 # Must have at least some recent data
                 prod_years = set(elements["production"].keys())
-                recent = {str(y) for y in range(2020, 2025)}
+                recent = {str(y) for y in range(YEAR_END - 4, YEAR_END + 1)}
                 if prod_years & recent:
                     # Must have non-trivial production
                     latest_prod = max(elements["production"].values())
@@ -387,7 +387,7 @@ def fetch_comtrade_data(top_exporters):
     print("\n🚢 Fetching UN Comtrade trade data (top exporters)...")
     
     trade_data = {}
-    years = list(range(2019, 2024))
+    years = list(range(YEAR_END - 5, YEAR_END))
     request_count = 0
     
     for country_name, reporter_code, crop_name, hs_code in top_exporters:
