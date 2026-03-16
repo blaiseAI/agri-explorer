@@ -475,6 +475,52 @@ def fetch_comtrade_data(top_exporters):
     return trade_data
 
 
+def build_top_exporters(crop_data, countries_info, n_crops=20, n_countries=3):
+    """Auto-select top exporter country-crop pairs from FAOSTAT production data."""
+    # Rank crops by total continental production (latest year)
+    crop_totals = {}
+    for country, crops in crop_data.items():
+        for crop_name, elements in crops.items():
+            if "production" in elements:
+                vals = list(elements["production"].values())
+                if vals:
+                    latest = vals[-1]
+                    crop_totals[crop_name] = crop_totals.get(crop_name, 0) + latest
+
+    # Sort by total production, take top n_crops that have HS codes
+    ranked = sorted(crop_totals.items(), key=lambda x: x[1], reverse=True)
+    top_crops = []
+    for crop_name, total in ranked:
+        if crop_name in CROP_TO_HS:
+            top_crops.append(crop_name)
+            if len(top_crops) >= n_crops:
+                break
+
+    # For each top crop, find the top n_countries producers
+    exporters = []
+    for crop_name in top_crops:
+        country_prod = []
+        for country, crops in crop_data.items():
+            if crop_name in crops and "production" in crops[crop_name]:
+                vals = list(crops[crop_name]["production"].values())
+                if vals:
+                    country_prod.append((country, vals[-1]))
+
+        country_prod.sort(key=lambda x: x[1], reverse=True)
+
+        hs_code = CROP_TO_HS[crop_name]
+        for country_name, _ in country_prod[:n_countries]:
+            info = countries_info.get(country_name)
+            if info:
+                iso3 = info["code"]
+                reporter_code = ISO3_TO_M49.get(iso3, "")
+                if reporter_code:
+                    exporters.append((country_name, reporter_code, crop_name, hs_code))
+
+    print(f"  📋 Auto-selected {len(exporters)} country-crop pairs across {len(top_crops)} crops")
+    return exporters
+
+
 # ──────────────────── Main ────────────────────
 
 def main():
@@ -515,48 +561,10 @@ def main():
         wb_data = None
         errors.append(f"World Bank: {str(e)}")
     
-    # 3. UN Comtrade — only for major exporters (to stay within rate limits)
-    # Define top exporter pairs
-    top_exporters = [
-        # Coffee
-        ("Uganda", "800", "Coffee", "0901"),
-        ("Kenya", "404", "Coffee", "0901"),
-        ("Ethiopia", "231", "Coffee", "0901"),
-        ("Tanzania", "834", "Coffee", "0901"),
-        ("Rwanda", "646", "Coffee", "0901"),
-        ("Ivory Coast", "384", "Coffee", "0901"),
-        # Cocoa
-        ("Ghana", "288", "Cocoa", "1801"),
-        ("Nigeria", "566", "Cocoa", "1801"),
-        ("Ivory Coast", "384", "Cocoa", "1801"),
-        ("Tanzania", "834", "Cocoa", "1801"),
-        ("Uganda", "800", "Cocoa", "1801"),
-        ("Cameroon", "120", "Cocoa", "1801"),
-        # Tea
-        ("Kenya", "404", "Tea", "0902"),
-        ("Tanzania", "834", "Tea", "0902"),
-        ("Uganda", "800", "Tea", "0902"),
-        ("Rwanda", "646", "Tea", "0902"),
-        ("Malawi", "454", "Tea", "0902"),
-        # Cashew
-        ("Tanzania", "834", "Cashew Nuts", "0801"),
-        ("Mozambique", "508", "Cashew Nuts", "0801"),
-        ("Ivory Coast", "384", "Cashew Nuts", "0801"),
-        ("Nigeria", "566", "Cashew Nuts", "0801"),
-        ("Guinea-Bissau", "624", "Cashew Nuts", "0801"),
-        # Sesame
-        ("Tanzania", "834", "Sesame", "1207"),
-        ("Nigeria", "566", "Sesame", "1207"),
-        ("Ethiopia", "231", "Sesame", "1207"),
-        ("Uganda", "800", "Sesame", "1207"),
-        # Avocados
-        ("Kenya", "404", "Avocados", "0804"),
-        ("South Africa", "710", "Avocados", "0804"),
-        ("Tanzania", "834", "Avocados", "0804"),
-        # Vanilla
-        ("Uganda", "800", "Vanilla", "0905"),
-        ("Madagascar", "450", "Vanilla", "0905"),
-    ]
+    # 3. UN Comtrade — auto-select top exporters from FAOSTAT data
+    top_exporters = []
+    if crop_data and countries_info:
+        top_exporters = build_top_exporters(crop_data, countries_info)
     
     try:
         trade_data = fetch_comtrade_data(top_exporters)
