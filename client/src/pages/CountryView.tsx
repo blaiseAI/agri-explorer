@@ -10,6 +10,8 @@ import { Slider } from "@/components/ui/slider";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { TrendingUp, TrendingDown, ArrowRight, ChevronRight, Globe, Users, Briefcase, Sprout, Info, Search, ChevronDown, Download, Ship } from "lucide-react";
 import { downloadCSV } from "@/lib/export";
+import UpgradePrompt from "@/components/UpgradePrompt";
+import { useToast } from "@/hooks/use-toast";
 
 const FLAG_MAP: Record<string, string> = {
   UGA: "🇺🇬", KEN: "🇰🇪", RWA: "🇷🇼", NGA: "🇳🇬", GHA: "🇬🇭", TZA: "🇹🇿",
@@ -45,6 +47,7 @@ function formatNumber(n: number): string {
 export default function CountryView() {
   const params = useParams<{ country: string }>();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   // Fetch countries list to find default (top producer)
   const { data: countriesData } = useQuery<any[]>({
@@ -181,21 +184,10 @@ export default function CountryView() {
   }
 
   function handleExport() {
-    const rows = (crops || []).filter((c: any) => c.latestProduction > 0).map((c: any) => {
-      const tradeYear = getLatestTradeYear(c.tradeData);
-      return {
-        Crop: c.name,
-        "Production (K tonnes)": c.latestProduction,
-        "Yield (hg/ha)": c.latestYield,
-        "Area (K ha)": c.latestArea || "",
-        "Global Avg Yield (hg/ha)": c.globalAvgYield || "",
-        "Production Growth (%)": c.productionGrowth,
-        "Yield Growth (%)": c.yieldGrowth,
-        "Export Value ($M)": tradeYear ? c.tradeData?.[tradeYear] || "" : "",
-        "Export Year": tradeYear || "",
-      };
+    toast({
+      title: "Pro Feature",
+      description: "CSV export is available on Pro. Upgrade to unlock.",
     });
-    downloadCSV(rows, `${country}-crops`);
   }
 
   return (
@@ -332,42 +324,44 @@ export default function CountryView() {
         </Card>
       )}
 
-      {/* Trade data section - Fix 3 */}
+      {/* Trade data section — Pro only */}
       {cropsWithTrade.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Ship size={14} className="text-violet-600 dark:text-violet-400" />
-              Export Trade (top exported crops)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-56" style={{ height: Math.max(200, Math.min(cropsWithTrade.length, 10) * 28) }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={cropsWithTrade.slice(0, 10).map((c: any) => ({
-                    name: c.name,
-                    value: c.tradeValue,
-                  }))}
-                  layout="vertical"
-                  margin={{ left: 10 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={90} />
-                  <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                    formatter={(val: any) => [`$${Number(val).toLocaleString()}M`, "Export Value"]}
-                  />
-                  <Bar dataKey="value" fill="hsl(270, 45%, 50%)" radius={[0, 4, 4, 0]} maxBarSize={24} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-2">
-              Source: UN Comtrade ({cropsWithTrade[0]?.tradeYear || "latest available"})
-            </p>
-          </CardContent>
-        </Card>
+        <UpgradePrompt feature="Export Trade Data" description="Full trade analytics with export values available on Pro.">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Ship size={14} className="text-violet-600 dark:text-violet-400" />
+                Export Trade (top exported crops)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-56" style={{ height: Math.max(200, Math.min(cropsWithTrade.length, 10) * 28) }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={cropsWithTrade.slice(0, 10).map((c: any) => ({
+                      name: c.name,
+                      value: c.tradeValue,
+                    }))}
+                    layout="vertical"
+                    margin={{ left: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={90} />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                      formatter={(val: any) => [`$${Number(val).toLocaleString()}M`, "Export Value"]}
+                    />
+                    <Bar dataKey="value" fill="hsl(270, 45%, 50%)" radius={[0, 4, 4, 0]} maxBarSize={24} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Source: UN Comtrade ({cropsWithTrade[0]?.tradeYear || "latest available"})
+              </p>
+            </CardContent>
+          </Card>
+        </UpgradePrompt>
       )}
 
       {/* Crop cards */}

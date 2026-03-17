@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { ChevronRight, TrendingUp, TrendingDown, Info, Search, ChevronDown, Download, ArrowUpDown, Filter } from "lucide-react";
 import { downloadCSV } from "@/lib/export";
+import UpgradePrompt from "@/components/UpgradePrompt";
+import { useToast } from "@/hooks/use-toast";
 
 const CHART_COLORS = [
   "hsl(152, 55%, 28%)",
@@ -59,6 +61,7 @@ export default function CropView() {
   const params = useParams<{ crop: string }>();
   const crop = params.crop || "Maize";
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -184,17 +187,10 @@ export default function CropView() {
   }
 
   function handleExport() {
-    const rows = sortedCountries.map((c: any) => ({
-      Country: c.country,
-      Region: c.region || "",
-      "Production (K tonnes)": c.latestProduction,
-      "Yield (hg/ha)": c.latestYield,
-      "Area (K ha)": c.latestArea,
-      "Yield Gap (%)": c.yieldGap?.toFixed(1) || "",
-      "Production Growth (%)": c.productionGrowth || "",
-      "Export Value ($M)": c.tradeValue || "",
-    }));
-    downloadCSV(rows, `${crop}-comparison`);
+    toast({
+      title: "Pro Feature",
+      description: "CSV export is available on Pro. Upgrade to unlock.",
+    });
   }
 
   if (isLoading) {
@@ -418,7 +414,7 @@ export default function CropView() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {sortedCountries.map((c: any) => (
+          {sortedCountries.slice(0, 5).map((c: any) => (
             <Link key={c.country} href={`/explore/${c.country}/${crop}`}>
               <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full" data-testid={`card-country-${c.country.toLowerCase()}`}>
                 <CardContent className="pt-4 pb-4 space-y-2">
@@ -460,6 +456,32 @@ export default function CropView() {
               </Card>
             </Link>
           ))}
+          {sortedCountries.length > 5 && (
+            <UpgradePrompt feature={`All ${sortedCountries.length} Countries`} description={`See the full ${crop} comparison across all producers.`}>
+              <Card className="h-full">
+                <CardContent className="pt-4 pb-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">{sortedCountries[5]?.country || "More countries"}</p>
+                    <ChevronRight size={14} className="text-muted-foreground" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Production</p>
+                      <p className="font-medium tabular-nums">—</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Yield</p>
+                      <p className="font-medium tabular-nums">—</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Area</p>
+                      <p className="font-medium tabular-nums">—</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </UpgradePrompt>
+          )}
         </div>
       </div>
     </div>

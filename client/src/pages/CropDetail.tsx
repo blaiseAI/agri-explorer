@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb, Download } from "lucide-react";
 import { downloadCSV } from "@/lib/export";
+import UpgradePrompt from "@/components/UpgradePrompt";
+import { useToast } from "@/hooks/use-toast";
 
 const FLAG_MAP: Record<string, string> = {
   UGA: "🇺🇬", KEN: "🇰🇪", RWA: "🇷🇼", NGA: "🇳🇬", GHA: "🇬🇭", TZA: "🇹🇿",
@@ -38,6 +40,7 @@ export default function CropDetail() {
   const params = useParams<{ country: string; crop: string }>();
   const country = params.country || "Nigeria";
   const crop = params.crop || "Maize";
+  const { toast } = useToast();
 
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/crop-data", country, crop],
@@ -102,13 +105,10 @@ export default function CropDetail() {
     : null;
 
   function handleExport() {
-    const rows = series.map((d: any) => ({
-      Year: d.year,
-      "Production (K tonnes)": d.production,
-      "Yield (hg/ha)": d.yield,
-      "Area (K ha)": d.area,
-    }));
-    downloadCSV(rows, `${country}-${crop}-timeseries`);
+    toast({
+      title: "Pro Feature",
+      description: "CSV export is available on Pro. Upgrade to unlock.",
+    });
   }
 
   return (
@@ -217,7 +217,8 @@ export default function CropDetail() {
         </Card>
       </div>
 
-      {/* Charts in tabs */}
+      {/* Charts — Pro only */}
+      <UpgradePrompt feature="Full Time Series Charts" description="Production, yield, and area trend charts unlock with Pro.">
       <Tabs defaultValue="production">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="production" data-testid="tab-production">Production</TabsTrigger>
@@ -313,6 +314,7 @@ export default function CropDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+      </UpgradePrompt>
 
       {/* Insights for this country+crop */}
       {insights && insights.length > 0 && (
