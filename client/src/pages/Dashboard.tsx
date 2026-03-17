@@ -183,7 +183,7 @@ export default function Dashboard() {
       {lastUpdated && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="data-freshness">
           <RefreshCw size={12} />
-          <span>Data refreshed {timeAgo(lastUpdated)} ({formatDate(lastUpdated)})</span>
+          <span>Data last updated: {formatDate(lastUpdated)}</span>
           <span className="text-muted-foreground/50">·</span>
           <span>Latest year: {latestYear}</span>
         </div>

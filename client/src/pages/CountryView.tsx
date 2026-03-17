@@ -3,12 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { useParams, Link, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { TrendingUp, TrendingDown, ArrowRight, ChevronRight, Globe, Users, Briefcase, Sprout, Info, Search, ChevronDown, Download, Ship } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, ChevronRight, Globe, Users, Briefcase, Sprout, Info, Search, ChevronDown, Download, Ship, ArrowUpDown } from "lucide-react";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useToast } from "@/hooks/use-toast";
@@ -77,6 +78,8 @@ export default function CountryView() {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [cropSort, setCropSort] = useState<"production" | "revenue" | "yield" | "growth">("production");
+  const [cropFilter, setCropFilter] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -508,9 +511,39 @@ export default function CountryView() {
 
       {/* Crop cards */}
       <div className="space-y-3">
-        <h2 className="text-sm font-medium">Crop Performance</h2>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-sm font-medium">Crop Performance</h2>
+          <div className="flex items-center gap-1.5">
+            <Input
+              placeholder="Search crops…"
+              value={cropFilter}
+              onChange={e => setCropFilter(e.target.value)}
+              className="h-7 w-36 text-xs"
+            />
+            {(["production", "revenue", "yield", "growth"] as const).map(s => (
+              <Button
+                key={s}
+                variant={cropSort === s ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs px-2.5"
+                onClick={() => setCropSort(s)}
+              >
+                {s === "production" ? "Production" : s === "revenue" ? "Revenue" : s === "yield" ? "Yield" : "Growth"}
+              </Button>
+            ))}
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {crops?.filter((c: any) => c.latestProduction > 0).map((crop: any) => {
+          {crops?.filter((c: any) => c.latestProduction > 0 && (!cropFilter || c.name.toLowerCase().includes(cropFilter.toLowerCase())))
+            .sort((a: any, b: any) => {
+              switch (cropSort) {
+                case "revenue": return (b.revenuePerHa || 0) - (a.revenuePerHa || 0);
+                case "yield": return (b.latestYield || 0) - (a.latestYield || 0);
+                case "growth": return (b.productionGrowth || 0) - (a.productionGrowth || 0);
+                default: return (b.latestProduction || 0) - (a.latestProduction || 0);
+              }
+            })
+            .map((crop: any) => {
             const yieldGap = crop.globalAvgYield
               ? ((crop.globalAvgYield - crop.latestYield) / crop.globalAvgYield * 100)
               : null;

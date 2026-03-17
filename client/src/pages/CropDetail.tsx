@@ -508,7 +508,7 @@ function SummaryCard({ label, value, growth, period }: { label: string; value: s
             isPositive ? "text-emerald-600 dark:text-emerald-400" : growth < 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"
           }`}>
             {isPositive ? <TrendingUp size={11} /> : growth < 0 ? <TrendingDown size={11} /> : null}
-            {isPositive ? "+" : ""}{growth}%
+            {isPositive ? "+" : ""}{growth}% total
           </span>
           <span className="text-[10px] text-muted-foreground">({period})</span>
         </div>

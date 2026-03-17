@@ -241,46 +241,46 @@ export function generateDiverseInsights(limit: number = 6): Insight[] {
     regionMap[c.name] = c.region;
   }
 
-  // Collect all regions present in insights
-  const allRegions = new Set<string>();
-  for (const ins of all) {
-    const r = ins.region || regionMap[ins.country] || "";
-    if (r) allRegions.add(r);
-  }
-
   const selected: Insight[] = [];
   const usedIds = new Set<string>();
   const countryCount: Record<string, number> = {};
-  const regionCovered = new Set<string>();
   const typeCovered = new Set<string>();
 
   function addInsight(ins: Insight): boolean {
     if (usedIds.has(ins.id)) return false;
+    if ((countryCount[ins.country] || 0) >= 2) return false;
     selected.push(ins);
     usedIds.add(ins.id);
     countryCount[ins.country] = (countryCount[ins.country] || 0) + 1;
-    const r = ins.region || regionMap[ins.country] || "";
-    if (r) regionCovered.add(r);
     typeCovered.add(ins.type);
     return true;
   }
 
-  // Pass 1: Pick the top signal from each region (ensures geographic spread)
-  for (const region of allRegions) {
+  // Pass 1: Pick the BEST signal from each distinct type (ensures variety)
+  // Priority order ensures we get a mix
+  const typeOrder: string[] = ["growth", "yield_gap", "trade", "opportunity", "warning"];
+  for (const t of typeOrder) {
     if (selected.length >= limit) break;
-    const regionInsights = all.filter(ins => (ins.region || regionMap[ins.country]) === region);
-    if (regionInsights.length > 0) {
-      addInsight(regionInsights[0]);
-    }
+    const best = all.find(ins => ins.type === t && !usedIds.has(ins.id) && (countryCount[ins.country] || 0) < 2);
+    if (best) addInsight(best);
   }
 
-  // Pass 2: Fill remaining slots from uncovered insight types
-  if (selected.length < limit) {
-    const uncoveredTypes = all.filter(ins => !typeCovered.has(ins.type) && !usedIds.has(ins.id));
-    for (const ins of uncoveredTypes) {
-      if (selected.length >= limit) break;
-      if ((countryCount[ins.country] || 0) >= 2) continue;
-      addInsight(ins);
+  // Pass 2: Fill remaining with highest-scoring, max 2 per country, avoid same type as slot 1
+  // Try to get at least one signal from each region
+  const regionCovered = new Set(selected.map(ins => ins.region || regionMap[ins.country] || ""));
+  const allRegions = new Set(all.map(ins => ins.region || regionMap[ins.country] || "").filter(Boolean));
+  
+  for (const region of Array.from(allRegions)) {
+    if (selected.length >= limit) break;
+    if (regionCovered.has(region)) continue;
+    const best = all.find(ins => 
+      (ins.region || regionMap[ins.country]) === region && 
+      !usedIds.has(ins.id) && 
+      (countryCount[ins.country] || 0) < 2
+    );
+    if (best) {
+      addInsight(best);
+      regionCovered.add(region);
     }
   }
 
@@ -294,7 +294,7 @@ export function generateDiverseInsights(limit: number = 6): Insight[] {
     }
   }
 
-  // Re-sort selected by score
+  // Re-sort: put diversity first but keep relative score order within groups
   selected.sort((a, b) => b.score - a.score);
 
   // Reassign stable IDs

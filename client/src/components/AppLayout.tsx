@@ -134,7 +134,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="h-8 w-8"
+              className="h-8 w-8 relative z-10 shrink-0"
               data-testid="theme-toggle"
               aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             >
