@@ -114,6 +114,12 @@ export function getProducerPrices(): Record<string, Record<string, Record<string
   return {};
 }
 
+export function getImportData(): Record<string, Record<string, Record<string, number>>> {
+  const live = loadLiveData();
+  if (live?.importData) return live.importData;
+  return {};
+}
+
 // ──────────────────── Fallback Constants ────────────────────
 
 const COUNTRIES_FALLBACK = [

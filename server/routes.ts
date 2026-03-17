@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { getCropData, getTradeData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices } from "./data";
+import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices } from "./data";
 import { generateInsights, generateDiverseInsights } from "./insights";
 
 export async function registerRoutes(
@@ -79,6 +79,8 @@ export async function registerRoutes(
 
     const wb = WORLD_BANK_DATA[country];
     const trade = TRADE_DATA[country];
+    const IMPORT_DATA = getImportData();
+    const imports = IMPORT_DATA[country];
     const PRODUCER_PRICES = getProducerPrices();
 
     const crops = Object.entries(countryData).map(([cropName, data]) => {
@@ -130,6 +132,7 @@ export async function registerRoutes(
           ? +(((data.yield[latestYear] - data.yield[firstYear]) / data.yield[firstYear]) * 100).toFixed(1)
           : 0,
         tradeData: trade?.[cropName] || null,
+        importData: imports?.[cropName] || null,
         revenuePerHa,
         exportOrientation,
       };
@@ -155,6 +158,27 @@ export async function registerRoutes(
         agValueGrowth: wb.agValueGrowth,
         fdiInflows: wb.fdiInflows,
       } : null,
+      topImports: (() => {
+        if (!imports) return [];
+        const aggregates = new Set([
+          'Crops and livestock products', 'Food Excluding Fish',
+          'Cereals and Preparations', 'Fats and Oils (excluding Butter)',
+          'Sugar and Honey', 'Fruit and Vegetables', 'Meat and Meat Preparations',
+          'Dairy Products and Birds Eggs', 'Coffee and Coffee Substitutes',
+          'Animal or vegetable fats and oils and their fractions',
+          'Vegetables and Fruit', 'Oilseeds', 'Oil Crops', 'Pulses',
+        ]);
+        return Object.entries(imports)
+          .filter(([crop]) => !aggregates.has(crop))
+          .map(([crop, years]: [string, any]) => {
+            const sortedYears = Object.keys(years).sort();
+            const latest = sortedYears[sortedYears.length - 1];
+            return { crop, value: years[latest], year: latest };
+          })
+          .filter(i => i.value > 0)
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 10);
+      })(),
     });
   });
 

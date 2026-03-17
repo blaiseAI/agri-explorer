@@ -466,8 +466,9 @@ def fetch_faostat_prices():
 # ──────────────────── FAOSTAT Trade (TCL) ────────────────────
 
 def fetch_faostat_trade():
-    """Download FAOSTAT Trade data (Export Value in USD 1000s) for all African countries.
+    """Download FAOSTAT Trade data (Export + Import Value in USD 1000s) for all African countries.
     Element Code 5922 = Export Value (1000 USD).
+    Element Code 5622 = Import Value (1000 USD).
     Values are converted to USD millions for consistency with existing tradeData format.
     """
     print("\n📦 Fetching FAOSTAT Trade data (TCL, all Africa)...")
@@ -476,7 +477,7 @@ def fetch_faostat_trade():
     zip_data = fetch_url(url, max_retries=3, timeout=180)
     if not zip_data:
         print("  ❌ Failed to download FAOSTAT trade data")
-        return None
+        return None, None
 
     print(f"  Downloaded {len(zip_data)/1024/1024:.1f} MB")
 
@@ -493,7 +494,8 @@ def fetch_faostat_trade():
 
     year_cols = [f"Y{y}" for y in range(YEAR_START, YEAR_END + 1)]
 
-    trade = {}  # country_display_name -> crop_clean_name -> {year: value_usd_millions}
+    export_trade = {}  # country -> crop -> {year: value_usd_millions}
+    import_trade = {}  # country -> crop -> {year: value_usd_millions}
 
     for row in reader:
         area_name = row.get("Area", "").strip()
@@ -501,7 +503,7 @@ def fetch_faostat_trade():
             continue
 
         element_code = row.get("Element Code", "").strip()
-        if element_code != "5922":  # Export Value (1000 USD)
+        if element_code not in ("5922", "5622"):
             continue
 
         m49_raw = row.get("Area Code (M49)", "").strip().replace("'", "")
@@ -532,13 +534,16 @@ def fetch_faostat_trade():
         if not year_data:
             continue
 
-        if display_name not in trade:
-            trade[display_name] = {}
-        trade[display_name][crop_clean] = year_data
+        target = export_trade if element_code == "5922" else import_trade
+        if display_name not in target:
+            target[display_name] = {}
+        target[display_name][crop_clean] = year_data
 
-    print(f"  ✅ FAOSTAT trade data for {len(trade)} countries, "
-          f"{sum(len(v) for v in trade.values())} crop-country pairs")
-    return trade
+    print(f"  ✅ FAOSTAT export trade: {len(export_trade)} countries, "
+          f"{sum(len(v) for v in export_trade.values())} crop-country pairs")
+    print(f"  ✅ FAOSTAT import trade: {len(import_trade)} countries, "
+          f"{sum(len(v) for v in import_trade.values())} crop-country pairs")
+    return export_trade, import_trade
 
 
 # ──────────────────── World Bank ────────────────────
@@ -759,8 +764,9 @@ def main():
 
     # 5. FAOSTAT Trade (TCL) — primary trade source with better Africa coverage
     faostat_trade = None
+    faostat_imports = None
     try:
-        faostat_trade = fetch_faostat_trade()
+        faostat_trade, faostat_imports = fetch_faostat_trade()
     except Exception as e:
         print(f"  ❌ FAOSTAT Trade error: {e}")
         errors.append(f"FAOSTAT Trade: {str(e)}")
@@ -837,7 +843,7 @@ def main():
                 "faostat_trade": {
                     "name": "FAOSTAT Trade (TCL)",
                     "url": "https://www.fao.org/faostat/en/#data/TCL",
-                    "description": "Primary trade data source — export values (USD) for African crops and livestock",
+                    "description": "Primary trade data source — export and import values (USD) for African crops and livestock",
                     "status": "ok" if faostat_trade else "failed",
                 },
                 "faostat_prices": {
@@ -876,6 +882,13 @@ def main():
     elif "tradeData" in existing:
         output["tradeData"] = existing["tradeData"]
         print("  ⚠️ Using previous trade data (fetch failed)")
+
+    import_data = faostat_imports or {}
+    if import_data:
+        output["importData"] = import_data
+    elif "importData" in existing:
+        output["importData"] = existing["importData"]
+        print("  ⚠️ Using previous import data (fetch failed)")
 
     if producer_prices:
         output["producerPrices"] = producer_prices

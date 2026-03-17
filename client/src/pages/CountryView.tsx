@@ -141,6 +141,7 @@ export default function CountryView() {
   const crops = data?.crops || [];
   const worldBank = data?.worldBank || {};
   const countryInfo = data?.countryInfo;
+  const topImports = data?.topImports || [];
   const wb = worldBank;
   const latestPop = getLatestValue(wb.population);
   const latestAgGdp = getLatestValue(wb.agGdpPct);
@@ -463,6 +464,44 @@ export default function CountryView() {
             </CardContent>
           </Card>
         </UpgradePrompt>
+      )}
+
+      {/* Import trade data section */}
+      {topImports.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Ship size={14} className="text-amber-600 dark:text-amber-400" />
+              Import Trade (top imported crops)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-56" style={{ height: Math.max(200, Math.min(topImports.length, 10) * 28) }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={topImports.slice(0, 10).map((i: any) => ({
+                    name: i.crop,
+                    value: i.value,
+                  }))}
+                  layout="vertical"
+                  margin={{ left: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={90} />
+                  <Tooltip
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
+                    formatter={(val: any) => [`$${Number(val).toLocaleString()}M`, "Import Value"]}
+                  />
+                  <Bar dataKey="value" fill="hsl(35, 80%, 50%)" radius={[0, 4, 4, 0]} maxBarSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              Source: FAOSTAT Trade ({topImports[0]?.year || "latest available"})
+            </p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Crop cards */}
