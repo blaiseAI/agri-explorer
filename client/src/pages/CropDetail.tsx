@@ -424,6 +424,72 @@ export default function CropDetail() {
           </div>
         </div>
       )}
+
+      {/* Risk Factors */}
+      {data?.riskFactors && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Risk Factors for {country}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              {data.riskFactors.politicalStability != null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Political Stability</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium tabular-nums">{Math.round(data.riskFactors.politicalStability)}th pctl</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      data.riskFactors.politicalStability >= 60 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : data.riskFactors.politicalStability >= 30 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                    }`}>{data.riskFactors.politicalStability >= 60 ? 'LOW RISK' : data.riskFactors.politicalStability >= 30 ? 'MEDIUM' : 'HIGH RISK'}</span>
+                  </div>
+                </div>
+              )}
+              {data.riskFactors.logisticsIndex != null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Logistics Score</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium tabular-nums">{data.riskFactors.logisticsIndex.toFixed(1)} / 5.0</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      data.riskFactors.logisticsIndex >= 3.0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : data.riskFactors.logisticsIndex >= 2.0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                    }`}>{data.riskFactors.logisticsIndex >= 3.0 ? 'GOOD' : data.riskFactors.logisticsIndex >= 2.0 ? 'MEDIUM' : 'POOR'}</span>
+                  </div>
+                </div>
+              )}
+              {data.riskFactors.climateExposure != null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Climate Exposure</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium tabular-nums">{data.riskFactors.climateExposure.toFixed(0)}% pop.</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      data.riskFactors.climateExposure <= 10 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : data.riskFactors.climateExposure <= 40 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                    }`}>{data.riskFactors.climateExposure <= 10 ? 'LOW' : data.riskFactors.climateExposure <= 40 ? 'MEDIUM' : 'HIGH'}</span>
+                  </div>
+                </div>
+              )}
+              {data.riskFactors.irrigatedLand != null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Irrigated Land</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium tabular-nums">{data.riskFactors.irrigatedLand.toFixed(1)}%</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      data.riskFactors.irrigatedLand >= 20 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : data.riskFactors.irrigatedLand >= 5 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    }`}>{data.riskFactors.irrigatedLand >= 20 ? 'Irrigated' : data.riskFactors.irrigatedLand >= 5 ? 'Partial' : 'Rain-dependent'}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-3">Source: World Bank Governance Indicators</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

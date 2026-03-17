@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Lock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useMonetization } from "@/hooks/useMonetization";
 
 interface UpgradePromptProps {
   feature: string;
@@ -10,6 +11,12 @@ interface UpgradePromptProps {
 }
 
 export default function UpgradePrompt({ feature, description, children }: UpgradePromptProps) {
+  const { isMonetizationEnabled } = useMonetization();
+
+  if (!isMonetizationEnabled) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="relative">
       <div className="pointer-events-none select-none blur-[6px] opacity-60">

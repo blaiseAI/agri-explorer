@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link } from "wouter";
-import { Mail, Lock, User, Chrome } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Mail, Lock, User, Chrome, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,28 +8,78 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { authClient } from "@/lib/auth-client";
 
 export default function SignUpPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [terms, setTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Coming Soon",
-      description: "Account creation will be available shortly. Stay tuned!",
-    });
+
+    if (!name || !email || !password || !confirm) {
+      toast({ title: "Error", description: "Please fill in all fields.", variant: "destructive" });
+      return;
+    }
+    if (password !== confirm) {
+      toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" });
+      return;
+    }
+    if (password.length < 8) {
+      toast({ title: "Error", description: "Password must be at least 8 characters.", variant: "destructive" });
+      return;
+    }
+    if (!terms) {
+      toast({ title: "Error", description: "Please accept the Terms of Service.", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await authClient.signUp.email({
+        email,
+        password,
+        name,
+      });
+      if (result.error) {
+        toast({
+          title: "Sign Up Failed",
+          description: result.error.message || "Could not create account. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Account created!", description: "Welcome to AgriScope. You're now signed in." });
+        setLocation("/");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Sign Up Failed",
+        description: err?.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogle = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Google sign-up will be available shortly.",
-    });
+  const handleGoogle = async () => {
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
+    } catch {
+      toast({
+        title: "Google Sign-Up",
+        description: "Google sign-in is not configured yet. Please use email/password.",
+      });
+    }
   };
 
   return (
@@ -60,6 +110,7 @@ export default function SignUpPage() {
                   className="pl-9"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -74,6 +125,7 @@ export default function SignUpPage() {
                   className="pl-9"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -88,6 +140,7 @@ export default function SignUpPage() {
                   className="pl-9"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -102,6 +155,7 @@ export default function SignUpPage() {
                   className="pl-9"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -116,8 +170,15 @@ export default function SignUpPage() {
                 I agree to the Terms of Service and Privacy Policy
               </Label>
             </div>
-            <Button type="submit" className="w-full">
-              Create Account
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin mr-2" />
+                  Creating account…
+                </>
+              ) : (
+                "Create Account"
+              )}
             </Button>
           </form>
 
@@ -128,7 +189,7 @@ export default function SignUpPage() {
             </span>
           </div>
 
-          <Button variant="outline" className="w-full gap-2" onClick={handleGoogle}>
+          <Button variant="outline" className="w-full gap-2" onClick={handleGoogle} disabled={loading}>
             <Chrome size={16} />
             Continue with Google
           </Button>

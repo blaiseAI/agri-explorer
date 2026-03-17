@@ -99,10 +99,22 @@ YEAR_END = datetime.now().year
 
 # World Bank indicators
 WB_INDICATORS = {
+    # Existing
     "NV.AGR.TOTL.ZS": "agGdpPct",
     "SP.RUR.TOTL.ZS": "ruralPct",
     "SL.AGR.EMPL.ZS": "agEmployPct",
     "SP.POP.TOTL":    "population",
+    # Section 4 — Investment Climate & Risk
+    "PV.PER.RNK":          "politicalStability",   # percentile 0–100
+    "RL.PER.RNK":          "ruleOfLaw",             # percentile 0–100
+    "CC.PER.RNK":          "corruption",            # percentile 0–100
+    "LP.LPI.OVRL.XQ":      "logisticsIndex",        # score 1–5
+    "AG.LND.IRIG.AG.ZS":   "irrigatedLand",         # % of ag land
+    "AG.LND.PRCP.MM":      "precipitation",          # mm/yr
+    "EN.CLC.MDAT.ZS":      "climateExposure",       # % population exposed
+    "AG.CON.FERT.ZS":      "fertilizerUse",          # kg/ha
+    "NV.AGR.TOTL.KD.ZG":   "agValueGrowth",         # annual % growth
+    "BX.KLT.DINV.WD.GD.ZS": "fdiInflows",           # FDI % of GDP
 }
 
 # Crop name → HS 4-digit trade code for Comtrade lookups

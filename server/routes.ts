@@ -45,6 +45,8 @@ export async function registerRoutes(
 
     const PRODUCER_PRICES = getProducerPrices();
     const cropPrices = PRODUCER_PRICES[country]?.[crop] || null;
+    const WORLD_BANK_DATA = getWorldBankData();
+    const wbCountry = WORLD_BANK_DATA[country];
 
     res.json({
       country,
@@ -52,6 +54,14 @@ export async function registerRoutes(
       timeSeries,
       globalAvgYield: GLOBAL_AVG_YIELDS[crop] || null,
       producerPrices: cropPrices,
+      riskFactors: wbCountry ? {
+        politicalStability: wbCountry.politicalStability ?? null,
+        ruleOfLaw: wbCountry.ruleOfLaw ?? null,
+        logisticsIndex: wbCountry.logisticsIndex ?? null,
+        climateExposure: wbCountry.climateExposure ?? null,
+        irrigatedLand: wbCountry.irrigatedLand ?? null,
+        fertilizerUse: wbCountry.fertilizerUse ?? null,
+      } : null,
     });
   });
 
@@ -134,6 +144,16 @@ export async function registerRoutes(
         ruralPct: wb.ruralPct,
         agEmployPct: wb.agEmployPct,
         population: wb.population,
+        politicalStability: wb.politicalStability,
+        ruleOfLaw: wb.ruleOfLaw,
+        corruption: wb.corruption,
+        logisticsIndex: wb.logisticsIndex,
+        irrigatedLand: wb.irrigatedLand,
+        precipitation: wb.precipitation,
+        climateExposure: wb.climateExposure,
+        fertilizerUse: wb.fertilizerUse,
+        agValueGrowth: wb.agValueGrowth,
+        fdiInflows: wb.fdiInflows,
       } : null,
     });
   });

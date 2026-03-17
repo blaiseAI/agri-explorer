@@ -1,8 +1,19 @@
 import { Link, useLocation } from "wouter";
 import { useTheme } from "./ThemeProvider";
 import { PerplexityAttribution } from "./PerplexityAttribution";
-import { Sun, Moon, BarChart3, Globe, Wheat, Sparkles, LogIn } from "lucide-react";
+import { Sun, Moon, BarChart3, Globe, Wheat, Sparkles, LogIn, LogOut, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
+import { useMonetization } from "@/hooks/useMonetization";
 
 const NAV_ITEMS = [
   { href: "/", label: "Overview", icon: BarChart3 },
@@ -13,7 +24,24 @@ const NAV_ITEMS = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { user, isLoading, isAuthenticated, signOut } = useAuth();
+  const { isMonetizationEnabled } = useMonetization();
+
+  const handleSignOut = async () => {
+    await signOut();
+    setLocation("/sign-in");
+  };
+
+  const getInitials = (name: string | undefined | null) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -34,6 +62,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           <nav className="hidden sm:flex items-center gap-1">
             {NAV_ITEMS.map((item) => {
+              if (item.href === "/pricing" && !isMonetizationEnabled) return null;
+              
               const isActive = item.href === "/"
                 ? location === "/"
                 : item.href === "/countries"
@@ -60,12 +90,46 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Link href="/sign-in">
-              <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex">
-                <LogIn size={14} />
-                Sign In
-              </Button>
-            </Link>
+            {!isMonetizationEnabled ? null : isLoading ? (
+              <Loader2 size={16} className="animate-spin text-muted-foreground" />
+            ) : isAuthenticated && user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
+                    <Avatar className="h-7 w-7">
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {getInitials(user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="gap-2" disabled>
+                    <User size={14} />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="gap-2 text-destructive" onClick={handleSignOut}>
+                    <LogOut size={14} />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/sign-in">
+                <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex">
+                  <LogIn size={14} />
+                  Sign In
+                </Button>
+              </Link>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -81,7 +145,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="flex-1">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 pb-12">
           {children}
         </div>
       </main>
@@ -91,7 +155,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
             <p>Data sources: FAOSTAT, World Bank, UN Comtrade. Not financial advice.</p>
             <div className="flex items-center gap-4">
-              <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+              {isMonetizationEnabled && (
+                <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+              )}
               <PerplexityAttribution />
             </div>
           </div>

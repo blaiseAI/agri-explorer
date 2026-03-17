@@ -340,6 +340,91 @@ export default function CountryView() {
         </Card>
       )}
 
+      {/* Investment Climate */}
+      {(wb.politicalStability || wb.logisticsIndex || wb.irrigatedLand || wb.agValueGrowth) && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Investment Climate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+              {wb.politicalStability != null && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-muted-foreground">Political Stability</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium tabular-nums">{Math.round(wb.politicalStability)}th pctl</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      wb.politicalStability >= 60 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : wb.politicalStability >= 30 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                    }`}>{wb.politicalStability >= 60 ? 'LOW RISK' : wb.politicalStability >= 30 ? 'MEDIUM' : 'HIGH RISK'}</span>
+                  </div>
+                </div>
+              )}
+              {wb.ruleOfLaw != null && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-muted-foreground">Rule of Law</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium tabular-nums">{Math.round(wb.ruleOfLaw)}th pctl</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      wb.ruleOfLaw >= 60 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : wb.ruleOfLaw >= 30 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                    }`}>{wb.ruleOfLaw >= 60 ? 'LOW RISK' : wb.ruleOfLaw >= 30 ? 'MEDIUM' : 'HIGH RISK'}</span>
+                  </div>
+                </div>
+              )}
+              {wb.logisticsIndex != null && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-muted-foreground">Logistics Score</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium tabular-nums">{wb.logisticsIndex.toFixed(1)} / 5.0</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      wb.logisticsIndex >= 3.0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : wb.logisticsIndex >= 2.0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                    }`}>{wb.logisticsIndex >= 3.0 ? 'GOOD' : wb.logisticsIndex >= 2.0 ? 'MEDIUM' : 'POOR'}</span>
+                  </div>
+                </div>
+              )}
+              {wb.irrigatedLand != null && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-muted-foreground">Irrigated Land</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium tabular-nums">{wb.irrigatedLand.toFixed(1)}%</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      wb.irrigatedLand >= 20 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : wb.irrigatedLand >= 5 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    }`}>{wb.irrigatedLand >= 20 ? 'Irrigated' : wb.irrigatedLand >= 5 ? 'Partial' : 'Rain-dependent'}</span>
+                  </div>
+                </div>
+              )}
+              {wb.agValueGrowth != null && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-muted-foreground">Ag Sector Growth</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium tabular-nums">{wb.agValueGrowth > 0 ? '+' : ''}{wb.agValueGrowth.toFixed(1)}%</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      wb.agValueGrowth >= 3 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : wb.agValueGrowth >= 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                    }`}>{wb.agValueGrowth >= 3 ? 'GROWING' : wb.agValueGrowth >= 0 ? 'STABLE' : 'DECLINING'}</span>
+                  </div>
+                </div>
+              )}
+              {wb.fdiInflows != null && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-muted-foreground">FDI Inflows (% GDP)</span>
+                  <span className="font-medium tabular-nums">{wb.fdiInflows.toFixed(1)}%</span>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-3">Source: World Bank Governance & Development Indicators</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Trade data section — Pro only */}
       {cropsWithTrade.length > 0 && (
         <UpgradePrompt feature="Export Trade Data" description="Full trade analytics with export values available on Pro.">

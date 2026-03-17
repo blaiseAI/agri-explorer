@@ -52,6 +52,7 @@ export function generateInsights(country?: string, crop?: string): Insight[] {
     const countryData = CROP_DATA[c];
     if (!countryData) continue;
     const region = countryLookup[c] || "";
+    const wb = WORLD_BANK_DATA[c];
 
     for (const cr of cropList) {
       const cropData = countryData[cr];
@@ -77,11 +78,19 @@ export function generateInsights(country?: string, crop?: string): Insight[] {
       const areaCAGR = calcCAGR(firstArea, lastArea, areaValues.length - 1);
       const scale = scaleBonus(lastProd);
 
+      // Governance bonus for opportunity scoring
+      const polStab = typeof wb?.politicalStability === 'number' ? wb.politicalStability : null;
+      const logIdx = typeof wb?.logisticsIndex === 'number' ? wb.logisticsIndex : null;
+      const govBonus = (
+        (polStab != null ? (polStab / 100) * 0.5 : 0) +
+        (logIdx != null ? (logIdx / 5) * 0.5 : 0)
+      ) * 20; // up to 20 pts
+
       // 1. Strong production growth
       // Score factors in growth rate AND absolute scale to avoid tiny-base inflation
       if (prodCAGR > 3 && lastProd >= 5) {
-        const rawScore = 45 + prodCAGR * 3 + scale * 25;
-        const score = Math.min(95, Math.round(rawScore));
+        const rawScore = 45 + prodCAGR * 3 + scale * 25 + govBonus;
+        const score = Math.min(98, Math.round(rawScore));
         insights.push({
           id: `insight-${++id}`,
           type: "growth",
@@ -168,25 +177,28 @@ export function generateInsights(country?: string, crop?: string): Insight[] {
       }
 
       // 5. Expanding area + growing production = investment opportunity
+      // Uses composite Opportunity Score: production + yield CAGR + governance indicators
       if (areaCAGR > 1.5 && prodCAGR > 3 && lastProd >= 20) {
-        const rawScore = 50 + (areaCAGR + prodCAGR) * 2 + scale * 20;
-        const score = Math.min(90, Math.round(rawScore));
+        const rawScore = 50 + (areaCAGR + prodCAGR) * 2 + scale * 20 + govBonus;
+        const score = Math.min(98, Math.round(rawScore));
+        const govLabel = polStab != null || logIdx != null
+          ? ` Political stability: ${polStab != null ? Math.round(polStab) + 'th pctl' : 'N/A'}${logIdx != null ? ', logistics: ' + Number(logIdx).toFixed(1) + '/5' : ''}.`
+          : '';
         insights.push({
           id: `insight-${++id}`,
           type: "opportunity",
           title: `${cr} expansion opportunity in ${c}`,
-          description: `Both cultivated area (+${areaCAGR.toFixed(1)}%/yr) and production (+${prodCAGR.toFixed(1)}%/yr) for ${cr} in ${c} are growing. Combined with ${lastYield > (globalAvg || 0) ? "above-average" : "below-average"} yields, this signals active investment and potential for scaling.`,
+          description: `Both cultivated area (+${areaCAGR.toFixed(1)}%/yr) and production (+${prodCAGR.toFixed(1)}%/yr) for ${cr} in ${c} are growing. Combined with ${lastYield > (globalAvg || 0) ? "above-average" : "below-average"} yields, this signals active investment and potential for scaling.${govLabel}`,
           country: c,
           region,
           crop: cr,
           score,
-          metrics: { areaCAGR: +areaCAGR.toFixed(1), prodCAGR: +prodCAGR.toFixed(1), latestProd: lastProd }
+          metrics: { areaCAGR: +areaCAGR.toFixed(1), prodCAGR: +prodCAGR.toFixed(1), latestProd: lastProd, politicalStability: polStab, logisticsIndex: logIdx }
         });
       }
     }
 
     // 6. Country-level opportunity: high ag GDP + large rural population
-    const wb = WORLD_BANK_DATA[c];
     if (wb) {
       const agGdpYears = Object.keys(wb.agGdpPct || {}).sort();
       const ruralYears = Object.keys(wb.ruralPct || {}).sort();
