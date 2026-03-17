@@ -8,10 +8,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, BarChart, Bar, ReferenceLine,
 } from "recharts";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb, Download, Sparkles, Zap, AlertTriangle, Ship, DollarSign, ChevronRight } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useToast } from "@/hooks/use-toast";
@@ -159,20 +160,20 @@ export default function CropDetail() {
     ? ((globalAvgYield - last.yield) / globalAvgYield * 100).toFixed(0)
     : null;
 
-  // Revenue per hectare from producer prices
-  const producerPrices = data?.producerPrices;
+  // Revenue per hectare from best available price (includes regional proxy for stale data)
+  const bestPrice = data?.bestPrice;
   let revenuePerHa: number | null = null;
   let avgPriceUsed: number | null = null;
   let priceYearUsed: string | null = null;
-  if (producerPrices && last?.yield) {
-    const recentYears = Object.keys(producerPrices).sort().slice(-3);
-    const prices = recentYears.map((y: string) => producerPrices[y]).filter(Boolean);
-    if (prices.length > 0) {
-      avgPriceUsed = prices.reduce((a: number, b: number) => a + b, 0) / prices.length;
-      const yieldTonnesPerHa = last.yield / 10000;
-      revenuePerHa = Math.round(yieldTonnesPerHa * avgPriceUsed);
-      priceYearUsed = recentYears[recentYears.length - 1];
-    }
+  let priceIsEstimate = false;
+  let priceSource: string | null = null;
+  if (bestPrice && last?.yield) {
+    avgPriceUsed = bestPrice.price;
+    const yieldTonnesPerHa = last.yield / 10000;
+    revenuePerHa = Math.round(yieldTonnesPerHa * avgPriceUsed);
+    priceYearUsed = bestPrice.year;
+    priceIsEstimate = bestPrice.isEstimate;
+    priceSource = bestPrice.source;
   }
 
   function handleExport() {
@@ -305,12 +306,20 @@ export default function CropDetail() {
               <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                 <DollarSign size={11} />
                 Est. Gross Revenue
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info size={11} className="shrink-0 cursor-help opacity-60 hover:opacity-100 transition-opacity" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[260px] text-xs">
+                    Estimated gross revenue: yield (hg/ha ÷ 10,000) × producer price ($/tonne). Does not include input costs, transport, or post-harvest losses.
+                  </TooltipContent>
+                </Tooltip>
               </p>
               <span className="text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
                 ~${revenuePerHa.toLocaleString()}/ha
               </span>
               <p className="text-xs text-muted-foreground mt-0.5">
-                yield × price ({avgPriceUsed ? `FAOSTAT${priceYearUsed ? ` ${priceYearUsed}` : ''}: $${Math.round(avgPriceUsed!)}/t` : '3yr'} avg)
+                yield × price ({priceSource ? `${priceIsEstimate ? 'est. ' : ''}${priceSource}: $${Math.round(avgPriceUsed!)}/t` : 'avg'})
               </p>
             </CardContent>
           </Card>
@@ -346,7 +355,7 @@ export default function CropDetail() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" label={{ value: 'Production (K tonnes)', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' } }} />
-                    <Tooltip
+                    <RechartsTooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                       formatter={(val: any) => [`${Number(val).toLocaleString()}K tonnes`, "Production"]}
                     />
@@ -373,7 +382,7 @@ export default function CropDetail() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" label={{ value: 'Yield (hg/ha)', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' } }} />
-                    <Tooltip
+                    <RechartsTooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                       formatter={(val: any) => [`${Number(val).toLocaleString()} hg/ha`, "Yield"]}
                     />
@@ -402,7 +411,7 @@ export default function CropDetail() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" label={{ value: 'Area (K ha)', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' } }} />
-                    <Tooltip
+                    <RechartsTooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                       formatter={(val: any) => [`${Number(val).toLocaleString()}K ha`, "Area"]}
                     />

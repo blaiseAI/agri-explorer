@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { TrendingUp, TrendingDown, ArrowRight, ChevronRight, Globe, Users, Briefcase, Sprout, Info, Search, ChevronDown, Download, Ship, ArrowUpDown } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useToast } from "@/hooks/use-toast";
@@ -332,7 +333,7 @@ export default function CountryView() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                   <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" domain={['auto', 'auto']} unit="%" />
-                  <Tooltip
+                  <RechartsTooltip
                     contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                     formatter={(val: any) => [`${val}%`, "Ag % of GDP"]}
                   />
@@ -453,7 +454,7 @@ export default function CountryView() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                     <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={90} />
-                    <Tooltip
+                    <RechartsTooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                       formatter={(val: any) => [`$${Number(val).toLocaleString()}M`, "Export Value"]}
                     />
@@ -493,7 +494,7 @@ export default function CountryView() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                   <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={120} />
-                  <Tooltip
+                  <RechartsTooltip
                     contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                     formatter={(val: any) => [`$${Number(val).toLocaleString()}M`, "Import Value"]}
                     labelFormatter={(label: any, payload: any) => payload?.[0]?.payload?.fullName || label}
@@ -593,7 +594,15 @@ export default function CountryView() {
 
                     {crop.revenuePerHa && (
                       <div className="flex items-center gap-1.5 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded px-2 py-1">
-                        <span>~${crop.revenuePerHa.toLocaleString()}/ha{crop.pricePerTonne ? ` (FAOSTAT ${crop.priceYear}: $${crop.pricePerTonne}/t)` : ''}</span>
+                        <span>~${crop.revenuePerHa.toLocaleString()}/ha{crop.priceSource ? ` (${crop.priceSource}: $${crop.pricePerTonne}/t)` : ''}</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info size={11} className="shrink-0 cursor-help opacity-60 hover:opacity-100 transition-opacity" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[240px] text-xs">
+                            Estimated gross revenue: yield (hg/ha ÷ 10,000) × producer price ($/tonne). Does not include input costs.
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     )}
                   </CardContent>

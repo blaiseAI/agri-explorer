@@ -5,8 +5,9 @@ import { useParams, Link, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
 import { ChevronRight, TrendingUp, TrendingDown, Info, Search, ChevronDown, Download, ArrowUpDown, Filter } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useToast } from "@/hooks/use-toast";
@@ -387,7 +388,7 @@ export default function CropView() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                 <YAxis dataKey="name" type="category" tick={<TruncatedTick />} stroke="hsl(var(--muted-foreground))" width={110} />
-                <Tooltip content={<ProductionTooltip />} cursor={false} />
+                <RechartsTooltip content={<ProductionTooltip />} cursor={false} />
                 <Bar dataKey="production" fill={PRODUCTION_BAR_COLOR} radius={[0, 4, 4, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
@@ -414,7 +415,7 @@ export default function CropView() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                 <YAxis dataKey="name" type="category" tick={<TruncatedTick />} stroke="hsl(var(--muted-foreground))" width={110} />
-                <Tooltip content={<YieldTooltip globalAvg={globalAvgYield} />} cursor={false} />
+                <RechartsTooltip content={<YieldTooltip globalAvg={globalAvgYield} />} cursor={false} />
                 {globalAvgYield && (
                   <ReferenceLine x={globalAvgYield} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />
                 )}
@@ -511,7 +512,15 @@ export default function CropView() {
                   )}
                   {c.revenuePerHa > 0 && (
                     <div className="flex items-center gap-1.5 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded px-2 py-1">
-                      <span>~${c.revenuePerHa.toLocaleString()}/ha{c.pricePerTonne ? ` (FAOSTAT ${c.priceYear}: $${c.pricePerTonne}/t)` : ''}</span>
+                      <span>~${c.revenuePerHa.toLocaleString()}/ha{c.pricePerTonne ? ` (${c.priceYear}: $${c.pricePerTonne}/t)` : ''}</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info size={11} className="shrink-0 cursor-help opacity-60 hover:opacity-100 transition-opacity" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[240px] text-xs">
+                          Estimated gross revenue: yield (hg/ha ÷ 10,000) × producer price ($/tonne). Does not include input costs.
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   )}
                   {c.productionGrowth < -20 && (
