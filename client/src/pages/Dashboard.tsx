@@ -190,7 +190,9 @@ export default function Dashboard() {
       )}
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="space-y-2">
+        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Top African Crops by Volume</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {topKpiCrops.map((crop) => (
           <KPICard
             key={crop}
@@ -200,6 +202,7 @@ export default function Dashboard() {
             cagr={cropGrowth?.[crop]}
           />
         ))}
+        </div>
       </div>
 
       {/* Pro upgrade banner */}

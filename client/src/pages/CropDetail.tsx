@@ -11,7 +11,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, BarChart, Bar, ReferenceLine,
 } from "recharts";
-import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb, Download, Sparkles, Zap, AlertTriangle, Ship, DollarSign } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb, Download, Sparkles, Zap, AlertTriangle, Ship, DollarSign, ChevronRight } from "lucide-react";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useToast } from "@/hooks/use-toast";
@@ -78,6 +78,34 @@ export default function CropDetail() {
     queryKey: ["/api/insights", `?country=${country}&crop=${crop}`],
     queryFn: getQueryFn({ on401: "throw" }),
   });
+
+  // Cross-link: other crops in same country
+  const { data: countryData } = useQuery<any>({
+    queryKey: ["/api/country", country],
+    queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  // Cross-link: same crop in other countries
+  const { data: cropData } = useQuery<any>({
+    queryKey: ["/api/crop", crop],
+    queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  const otherCrops = useMemo(() => {
+    if (!countryData?.crops) return [];
+    return countryData.crops
+      .filter((c: any) => c.name !== crop && c.latestProduction > 0)
+      .sort((a: any, b: any) => (b.revenuePerHa || 0) - (a.revenuePerHa || 0))
+      .slice(0, 6);
+  }, [countryData?.crops, crop]);
+
+  const otherCountries = useMemo(() => {
+    if (!cropData?.countries) return [];
+    return cropData.countries
+      .filter((c: any) => c.country !== country && c.latestProduction > 0)
+      .sort((a: any, b: any) => (b.latestYield || 0) - (a.latestYield || 0))
+      .slice(0, 6);
+  }, [cropData?.countries, country]);
 
   // Year range state
   const allSeries = data?.timeSeries || [];
@@ -230,7 +258,7 @@ export default function CropDetail() {
       )}
 
       {/* Summary KPIs */}
-      <div className={`grid grid-cols-2 gap-3 ${revenuePerHa !== null ? 'md:grid-cols-3 lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${revenuePerHa !== null ? 'md:grid-cols-3 lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
         <SummaryCard
           label="Latest Production"
           value={`${last?.production?.toLocaleString() || "—"}K t`}
@@ -489,6 +517,45 @@ export default function CropDetail() {
               )}
             </div>
             <p className="text-[10px] text-muted-foreground mt-3">Source: World Bank Governance Indicators</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cross-links */}
+      {otherCrops.length > 0 && (
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Other crops in {country}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {otherCrops.map((c: any) => (
+                <Link key={c.name} href={`/explore/${country}/${c.name}`}>
+                  <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer">
+                    {c.name}
+                    {c.revenuePerHa > 0 && <span className="text-emerald-600 dark:text-emerald-400 text-[10px]">${c.revenuePerHa.toLocaleString()}/ha</span>}
+                    <ChevronRight size={10} className="text-muted-foreground" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {otherCountries.length > 0 && (
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs font-medium text-muted-foreground mb-2">{crop} in other countries</p>
+            <div className="flex flex-wrap gap-1.5">
+              {otherCountries.map((c: any) => (
+                <Link key={c.country} href={`/explore/${c.country}/${crop}`}>
+                  <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer">
+                    {c.country}
+                    <span className="text-[10px] text-muted-foreground">{(c.latestYield || 0).toLocaleString()} hg/ha</span>
+                    <ChevronRight size={10} className="text-muted-foreground" />
+                  </span>
+                </Link>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

@@ -513,7 +513,7 @@ export default function CountryView() {
       <div className="space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-sm font-medium">Crop Performance</h2>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <Input
               placeholder="Search crops…"
               value={cropFilter}
