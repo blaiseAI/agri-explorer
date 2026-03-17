@@ -451,6 +451,84 @@ def fetch_faostat_prices():
     return prices
 
 
+# ──────────────────── FAOSTAT Trade (TCL) ────────────────────
+
+def fetch_faostat_trade():
+    """Download FAOSTAT Trade data (Export Value in USD 1000s) for all African countries.
+    Element Code 5922 = Export Value (1000 USD).
+    Values are converted to USD millions for consistency with existing tradeData format.
+    """
+    print("\n📦 Fetching FAOSTAT Trade data (TCL, all Africa)...")
+
+    url = "https://bulks-faostat.fao.org/production/Trade_CropsLivestock_E_Africa.zip"
+    zip_data = fetch_url(url, max_retries=3, timeout=180)
+    if not zip_data:
+        print("  ❌ Failed to download FAOSTAT trade data")
+        return None
+
+    print(f"  Downloaded {len(zip_data)/1024/1024:.1f} MB")
+
+    zf = zipfile.ZipFile(io.BytesIO(zip_data))
+    csv_name = "Trade_CropsLivestock_E_Africa_NOFLAG.csv"
+
+    with zf.open(csv_name) as f:
+        content = f.read().decode("utf-8-sig")
+
+    reader = csv.DictReader(io.StringIO(content))
+
+    aggregates = {"Africa", "Eastern Africa", "Western Africa", "Northern Africa",
+                  "Southern Africa", "Middle Africa", "Sub-Saharan Africa"}
+
+    year_cols = [f"Y{y}" for y in range(YEAR_START, YEAR_END + 1)]
+
+    trade = {}  # country_display_name -> crop_clean_name -> {year: value_usd_millions}
+
+    for row in reader:
+        area_name = row.get("Area", "").strip()
+        if area_name in aggregates:
+            continue
+
+        element_code = row.get("Element Code", "").strip()
+        if element_code != "5922":  # Export Value (1000 USD)
+            continue
+
+        m49_raw = row.get("Area Code (M49)", "").strip().replace("'", "")
+        iso3 = M49_TO_ISO3.get(m49_raw, "")
+        if not iso3:
+            continue
+
+        item_name = row.get("Item", "").strip()
+        item_lower = item_name.lower()
+        if any(kw in item_lower for kw in EXCLUDE_KEYWORDS):
+            continue
+
+        display_name = FAOSTAT_NAMES.get(area_name, area_name)
+        crop_clean = clean_crop_name(item_name)
+
+        year_data = {}
+        for ycol in year_cols:
+            val_str = row.get(ycol, "").strip()
+            if val_str:
+                try:
+                    # Convert from 1000 USD to millions USD
+                    val = float(val_str) / 1000.0
+                    if val > 0:
+                        year_data[ycol[1:]] = round(val, 1)
+                except ValueError:
+                    pass
+
+        if not year_data:
+            continue
+
+        if display_name not in trade:
+            trade[display_name] = {}
+        trade[display_name][crop_clean] = year_data
+
+    print(f"  ✅ FAOSTAT trade data for {len(trade)} countries, "
+          f"{sum(len(v) for v in trade.values())} crop-country pairs")
+    return trade
+
+
 # ──────────────────── World Bank ────────────────────
 
 def fetch_worldbank_data(country_codes):
@@ -653,10 +731,10 @@ def main():
         top_exporters = build_top_exporters(crop_data, countries_info)
     
     try:
-        trade_data = fetch_comtrade_data(top_exporters)
+        comtrade_data = fetch_comtrade_data(top_exporters)
     except Exception as e:
         print(f"  ❌ Comtrade error: {e}")
-        trade_data = None
+        comtrade_data = None
         errors.append(f"UN Comtrade: {str(e)}")
     
     # 4. FAOSTAT Producer Prices
@@ -666,6 +744,31 @@ def main():
         print(f"  ❌ Producer Prices error: {e}")
         producer_prices = None
         errors.append(f"Producer Prices: {str(e)}")
+
+    # 5. FAOSTAT Trade (TCL) — primary trade source with better Africa coverage
+    faostat_trade = None
+    try:
+        faostat_trade = fetch_faostat_trade()
+    except Exception as e:
+        print(f"  ❌ FAOSTAT Trade error: {e}")
+        errors.append(f"FAOSTAT Trade: {str(e)}")
+
+    # Merge trade data: FAOSTAT TCL as primary, Comtrade as fallback
+    trade_data = {}
+    if faostat_trade:
+        trade_data = {c: dict(crops) for c, crops in faostat_trade.items()}
+    if comtrade_data:
+        for country, crops in comtrade_data.items():
+            if country not in trade_data:
+                trade_data[country] = {}
+            for crop, years in crops.items():
+                if crop not in trade_data[country]:
+                    trade_data[country][crop] = years
+    if trade_data:
+        print(f"\n  📊 Merged trade data: {len(trade_data)} countries, "
+              f"{sum(len(v) for v in trade_data.values())} crop-country pairs")
+    else:
+        trade_data = None
     
     # Build years list
     available_years = set()
@@ -716,8 +819,14 @@ def main():
                 "comtrade": {
                     "name": "UN Comtrade",
                     "url": "https://comtradeplus.un.org/",
-                    "description": "International trade flow data — agricultural export values",
-                    "status": "ok" if trade_data else "failed",
+                    "description": "Bilateral trade flows used for export destination data. Primary trade data sourced from FAOSTAT TCL for broader African coverage.",
+                    "status": "ok" if comtrade_data else "skipped",
+                },
+                "faostat_trade": {
+                    "name": "FAOSTAT Trade (TCL)",
+                    "url": "https://www.fao.org/faostat/en/#data/TCL",
+                    "description": "Primary trade data source — export values (USD) for African crops and livestock",
+                    "status": "ok" if faostat_trade else "failed",
                 },
                 "faostat_prices": {
                     "name": "FAOSTAT Producer Prices",

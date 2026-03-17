@@ -496,7 +496,7 @@ export default function CropView() {
                       <span className="font-medium">Export: ${c.tradeValue}M</span>
                     </div>
                   ) : (
-                    <div className="text-[10px] text-muted-foreground/60 px-2">No trade data</div>
+                    <div className="text-[10px] text-muted-foreground/60 px-2">No export data available</div>
                   )}
                   {c.revenuePerHa > 0 && (
                     <div className="flex items-center gap-1.5 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded px-2 py-1">
