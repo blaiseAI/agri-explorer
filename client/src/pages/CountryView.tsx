@@ -560,7 +560,7 @@ export default function CountryView() {
 
                     {crop.revenuePerHa && (
                       <div className="flex items-center gap-1.5 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded px-2 py-1">
-                        <span>Est. ~${crop.revenuePerHa.toLocaleString()}/ha gross revenue</span>
+                        <span>~${crop.revenuePerHa.toLocaleString()}/ha{crop.pricePerTonne ? ` (FAOSTAT ${crop.priceYear}: $${crop.pricePerTonne}/t)` : ''}</span>
                       </div>
                     )}
                   </CardContent>

@@ -135,6 +135,7 @@ export default function CropDetail() {
   const producerPrices = data?.producerPrices;
   let revenuePerHa: number | null = null;
   let avgPriceUsed: number | null = null;
+  let priceYearUsed: string | null = null;
   if (producerPrices && last?.yield) {
     const recentYears = Object.keys(producerPrices).sort().slice(-3);
     const prices = recentYears.map((y: string) => producerPrices[y]).filter(Boolean);
@@ -142,6 +143,7 @@ export default function CropDetail() {
       avgPriceUsed = prices.reduce((a: number, b: number) => a + b, 0) / prices.length;
       const yieldTonnesPerHa = last.yield / 10000;
       revenuePerHa = Math.round(yieldTonnesPerHa * avgPriceUsed);
+      priceYearUsed = recentYears[recentYears.length - 1];
     }
   }
 
@@ -280,7 +282,7 @@ export default function CropDetail() {
                 ~${revenuePerHa.toLocaleString()}/ha
               </span>
               <p className="text-xs text-muted-foreground mt-0.5">
-                yield × price ({avgPriceUsed ? `$${Math.round(avgPriceUsed!)}/t` : '3yr'} avg)
+                yield × price ({avgPriceUsed ? `FAOSTAT${priceYearUsed ? ` ${priceYearUsed}` : ''}: $${Math.round(avgPriceUsed!)}/t` : '3yr'} avg)
               </p>
             </CardContent>
           </Card>

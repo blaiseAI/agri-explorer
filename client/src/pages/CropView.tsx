@@ -504,12 +504,14 @@ export default function CropView() {
                         }`}>{c.exportOrientation}</span>
                       )}
                     </div>
+                  ) : c.tradeData && Object.keys(c.tradeData).length > 0 ? (
+                    <div className="text-[10px] text-muted-foreground/60 px-2">Export: &lt;$0.1M (domestic market)</div>
                   ) : (
                     <div className="text-[10px] text-muted-foreground/60 px-2">No export data available</div>
                   )}
                   {c.revenuePerHa > 0 && (
                     <div className="flex items-center gap-1.5 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded px-2 py-1">
-                      <span>~${c.revenuePerHa.toLocaleString()}/ha revenue</span>
+                      <span>~${c.revenuePerHa.toLocaleString()}/ha{c.pricePerTonne ? ` (FAOSTAT ${c.priceYear}: $${c.pricePerTonne}/t)` : ''}</span>
                     </div>
                   )}
                   {c.productionGrowth < -20 && (

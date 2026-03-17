@@ -91,6 +91,8 @@ export async function registerRoutes(
       // Compute revenue per hectare from producer prices
       const priceData = PRODUCER_PRICES[country]?.[cropName];
       let revenuePerHa: number | null = null;
+      let pricePerTonne: number | null = null;
+      let priceYear: string | null = null;
       if (priceData && data.yield[latestYear]) {
         const recentYears = Object.keys(priceData).sort().slice(-3);
         const prices = recentYears.map(y => priceData[y]).filter(Boolean);
@@ -98,6 +100,8 @@ export async function registerRoutes(
           const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
           const yieldTonnesPerHa = data.yield[latestYear] / 10000;
           revenuePerHa = Math.round(yieldTonnesPerHa * avgPrice);
+          pricePerTonne = Math.round(avgPrice);
+          priceYear = recentYears[recentYears.length - 1];
         }
       }
 
@@ -134,6 +138,8 @@ export async function registerRoutes(
         tradeData: trade?.[cropName] || null,
         importData: imports?.[cropName] || null,
         revenuePerHa,
+        pricePerTonne,
+        priceYear,
         exportOrientation,
       };
     }).filter(c => c.latestProduction > 0);
