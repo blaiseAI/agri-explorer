@@ -22,7 +22,9 @@ import {
   Database,
   ExternalLink,
   Search,
+  Sparkles,
 } from "lucide-react";
+import UpgradePrompt from "@/components/UpgradePrompt";
 
 const INSIGHT_ICONS: Record<string, any> = {
   opportunity: Target,
@@ -196,6 +198,19 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Pro upgrade banner */}
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+        <Sparkles size={16} className="text-primary shrink-0" />
+        <p className="text-sm text-muted-foreground flex-1">
+          Unlock <span className="font-medium text-foreground">investment signals</span>,{" "}
+          <span className="font-medium text-foreground">trade analytics</span>, and{" "}
+          <span className="font-medium text-foreground">CSV export</span> with Pro.
+        </p>
+        <Link href="/pricing">
+          <button className="text-xs font-medium text-primary hover:underline whitespace-nowrap">See Pricing →</button>
+        </Link>
+      </div>
+
       {/* Two column: Countries + Crops */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Countries */}
@@ -362,7 +377,7 @@ export default function Dashboard() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {topInsights?.map((insight: any) => {
+          {topInsights?.slice(0, 2).map((insight: any) => {
             const Icon = INSIGHT_ICONS[insight.type] || Lightbulb;
             return (
               <Link key={insight.id} href={insight.crop ? `/explore/${insight.country}/${insight.crop}` : `/country/${insight.country}`}>
@@ -387,6 +402,22 @@ export default function Dashboard() {
               </Link>
             );
           })}
+          {topInsights && topInsights.length > 2 && (
+            <UpgradePrompt feature="All Investment Signals" description="Unlock all AI-generated investment signals to discover growth opportunities across Africa.">
+              <Card className="h-full">
+                <CardContent className="pt-4 pb-4 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <Badge variant="secondary" className="text-[11px] px-2 py-0.5">opportunity</Badge>
+                    <span className="text-xs font-medium tabular-nums">88/100</span>
+                  </div>
+                  <p className="text-sm font-medium leading-snug">Premium Signal Preview</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                    Discover high-potential agricultural markets with our proprietary scoring model.
+                  </p>
+                </CardContent>
+              </Card>
+            </UpgradePrompt>
+          )}
         </div>
       </div>
 

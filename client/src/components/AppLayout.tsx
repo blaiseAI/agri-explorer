@@ -1,13 +1,14 @@
 import { Link, useLocation } from "wouter";
 import { useTheme } from "./ThemeProvider";
 import { PerplexityAttribution } from "./PerplexityAttribution";
-import { Sun, Moon, BarChart3, Globe, Wheat, Lightbulb } from "lucide-react";
+import { Sun, Moon, BarChart3, Globe, Wheat, Sparkles, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
   { href: "/", label: "Overview", icon: BarChart3 },
   { href: "/countries", label: "Countries", icon: Globe },
   { href: "/crops", label: "Crops", icon: Wheat },
+  { href: "/pricing", label: "Pricing", icon: Sparkles },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -59,6 +60,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-2">
+            <Link href="/sign-in">
+              <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex">
+                <LogIn size={14} />
+                Sign In
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="icon"
@@ -83,7 +90,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
             <p>Data sources: FAOSTAT, World Bank, UN Comtrade. Not financial advice.</p>
-            <PerplexityAttribution />
+            <div className="flex items-center gap-4">
+              <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+              <PerplexityAttribution />
+            </div>
           </div>
         </div>
       </footer>
