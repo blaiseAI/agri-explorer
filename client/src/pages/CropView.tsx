@@ -460,7 +460,7 @@ export default function CropView() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {sortedCountries.slice(0, 5).map((c: any) => (
+          {sortedCountries.slice(0, isMonetizationEnabled ? 5 : sortedCountries.length).map((c: any) => (
             <Link key={c.country} href={`/explore/${c.country}/${crop}`}>
               <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full" data-testid={`card-country-${c.country.toLowerCase()}`}>
                 <CardContent className="pt-4 pb-4 space-y-2">
@@ -521,7 +521,7 @@ export default function CropView() {
               </Card>
             </Link>
           ))}
-          {sortedCountries.length > 5 && (
+          {isMonetizationEnabled && sortedCountries.length > 5 && (
             <UpgradePrompt feature={`All ${sortedCountries.length} Countries`} description={`See the full ${crop} comparison across all producers.`}>
               <Card className="h-full">
                 <CardContent className="pt-4 pb-4 space-y-2">
