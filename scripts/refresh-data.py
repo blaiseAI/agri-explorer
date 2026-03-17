@@ -165,6 +165,54 @@ CROP_TO_HS = {
     "Sisal": "5304",
 }
 
+# ──────────────────── WFP Food Prices (HDX) ────────────────────
+
+FARMGATE_DISCOUNT = 0.50  # WFP prices are retail; farmgate ≈ 50% of retail
+
+# WFP commodity name → our clean crop name (None = skip this commodity)
+WFP_COMMODITY_MAP = {
+    "Maize": "Maize", "Maize (white)": "Maize", "Maize (yellow)": "Maize",
+    "Maize flour": "Maize",  # processed proxy — tracked via isProcessedProxy
+    "Millet": "Millet",
+    "Sorghum": "Sorghum", "Sorghum (white)": "Sorghum", "Sorghum (brown)": "Sorghum",
+    "Rice (local)": "Rice", "Rice (milled, local)": "Rice",
+    "Yam": "Yams", "Yam (Abuja)": "Yams",
+    "Cassava": "Cassava",                       # raw cassava — keep if it appears
+    "Cassava meal (gari, white)": None,          # skip — processed (~3× raw price)
+    "Gari (white)": None,                        # skip — processed
+    "Beans (niebe)": "Beans", "Beans (white)": "Beans", "Beans (red)": "Beans",
+    "Cowpeas": "Cowpeas", "Cowpeas (brown)": "Cowpeas", "Cowpeas (white)": "Cowpeas",
+    "Groundnuts": "Groundnuts", "Groundnuts (shelled)": "Groundnuts",
+    "Onions": "Onions",
+    "Tomatoes": "Tomatoes",
+    "Bananas": "Bananas",
+    "Oranges": "Oranges",
+    "Wheat": "Wheat",
+    "Potatoes": "Potatoes",
+    "Sweet potatoes": "Sweet Potatoes",
+}
+
+# WFP commodities that are processed forms → sets isProcessedProxy flag
+WFP_PROCESSED_PROXIES = {"Maize flour"}
+
+# ISO3 → HDX country slug for WFP food price datasets
+ISO3_TO_HDX_SLUG = {
+    "NGA": "nigeria", "KEN": "kenya", "GHA": "ghana", "UGA": "uganda",
+    "TZA": "united-republic-of-tanzania", "ETH": "ethiopia", "CMR": "cameroon",
+    "MOZ": "mozambique", "MWI": "malawi", "ZMB": "zambia", "RWA": "rwanda",
+    "SEN": "senegal", "MLI": "mali", "BFA": "burkina-faso", "NER": "niger",
+    "TCD": "chad", "BEN": "benin", "TGO": "togo", "CIV": "cote-d-ivoire",
+    "SLE": "sierra-leone", "LBR": "liberia", "GIN": "guinea", "MDG": "madagascar",
+    "ZWE": "zimbabwe", "NAM": "namibia", "BWA": "botswana", "LSO": "lesotho",
+    "SWZ": "eswatini", "ZAF": "south-africa", "SDN": "sudan", "SSD": "south-sudan",
+    "SOM": "somalia", "DJI": "djibouti", "ERI": "eritrea",
+    "COD": "democratic-republic-of-the-congo",
+    "COG": "congo", "CAF": "central-african-republic", "GAB": "gabon",
+    "BDI": "burundi", "AGO": "angola", "MRT": "mauritania",
+    "EGY": "egypt", "MAR": "morocco", "TUN": "tunisia", "DZA": "algeria",
+    "LBY": "libya", "GMB": "gambia", "GNB": "guinea-bissau", "MUS": "mauritius",
+}
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 DATA_DIR = os.path.join(PROJECT_DIR, "server", "data")
@@ -461,6 +509,256 @@ def fetch_faostat_prices():
     print(f"  ✅ Producer prices for {len(prices)} countries, "
           f"{sum(len(v) for v in prices.values())} crop-country pairs")
     return prices
+
+
+def compute_price_proxies(producer_prices, countries_info):
+    """For country-crop pairs with stale (>5yr old) prices, compute regional proxy estimates.
+    
+    Returns: dict  country -> crop -> { "price": float, "year": int, "source": str }
+    """
+    if not producer_prices or not countries_info:
+        return {}
+    
+    current_year = datetime.now().year
+    stale_threshold = current_year - 5  # 2021 for 2026
+    
+    # Build region lookup: country_display_name -> region
+    country_region = {}
+    for name, info in countries_info.items():
+        country_region[name] = info.get("region", "")
+    
+    # Build region -> [countries] lookup
+    region_countries = {}
+    for name, region in country_region.items():
+        if region:
+            if region not in region_countries:
+                region_countries[region] = []
+            region_countries[region].append(name)
+    
+    # For each country-crop, find latest year
+    estimates = {}
+    filled_count = 0
+    
+    for country, crops in producer_prices.items():
+        region = country_region.get(country, "")
+        if not region:
+            continue
+            
+        for crop, year_data in crops.items():
+            if not year_data:
+                continue
+            
+            latest_year = max(int(y) for y in year_data.keys())
+            
+            if latest_year >= stale_threshold:
+                continue  # This country-crop has recent data, skip
+            
+            # Stale! Compute regional proxy
+            regional_prices = []
+            for peer_country in region_countries.get(region, []):
+                if peer_country == country:
+                    continue
+                peer_crops = producer_prices.get(peer_country, {})
+                peer_year_data = peer_crops.get(crop, {})
+                if not peer_year_data:
+                    continue
+                
+                # Find this peer's latest price
+                peer_latest_year = max(int(y) for y in peer_year_data.keys())
+                if peer_latest_year >= stale_threshold:
+                    regional_prices.append(peer_year_data[str(peer_latest_year)])
+            
+            if not regional_prices:
+                # Try continent-wide if no regional peers
+                for peer_country, peer_crops in producer_prices.items():
+                    if peer_country == country:
+                        continue
+                    peer_year_data = peer_crops.get(crop, {})
+                    if not peer_year_data:
+                        continue
+                    peer_latest_year = max(int(y) for y in peer_year_data.keys())
+                    if peer_latest_year >= stale_threshold:
+                        regional_prices.append(peer_year_data[str(peer_latest_year)])
+                
+                if regional_prices:
+                    source_label = "Africa avg"
+                else:
+                    continue  # No proxy data available anywhere
+            else:
+                source_label = f"{region} avg"
+            
+            avg_price = round(sum(regional_prices) / len(regional_prices), 1)
+            
+            if country not in estimates:
+                estimates[country] = {}
+            estimates[country][crop] = {
+                "price": avg_price,
+                "year": current_year,
+                "source": source_label,
+                "peerCount": len(regional_prices),
+                "actualLatestYear": latest_year,
+                "actualLatestPrice": year_data[str(latest_year)],
+            }
+            filled_count += 1
+    
+    print(f"  📊 Generated {filled_count} regional price estimates for "
+          f"{len(estimates)} countries with stale data")
+    return estimates
+
+
+def parse_wfp_unit_kg(unit_str):
+    """Parse WFP unit string to kilograms. Returns None for non-weight units."""
+    unit_str = unit_str.strip()
+    if unit_str == "KG":
+        return 1.0
+    if unit_str.endswith(" KG"):
+        try:
+            return float(unit_str.replace(" KG", ""))
+        except ValueError:
+            return None
+    if unit_str.endswith(" G"):
+        try:
+            grams = float(unit_str.replace(" G", ""))
+            return grams / 1000.0
+        except ValueError:
+            return None
+    return None  # Skip "L", "pcs", "30 pcs", etc.
+
+
+def fetch_wfp_prices(country_iso3_list, countries_info):
+    """Download WFP food prices from HDX for countries with stale FAOSTAT data."""
+    print("\n🌍 Fetching WFP food prices from HDX...")
+
+    wfp_prices = {}       # country_display_name -> crop_clean_name -> {year: price_usd_farmgate}
+    wfp_proxy_flags = {}  # country_display_name -> crop_clean_name -> True if processed proxy
+    countries_fetched = 0
+    countries_skipped = 0
+
+    # Build ISO3 → display_name reverse lookup
+    iso3_to_display = {}
+    for dname, info in (countries_info or {}).items():
+        iso3_to_display[info.get("code", "")] = dname
+
+    for iso3 in sorted(country_iso3_list):
+        slug = ISO3_TO_HDX_SLUG.get(iso3)
+        if not slug:
+            continue
+
+        display_name = iso3_to_display.get(iso3, slug.replace("-", " ").title())
+
+        # 1. Query HDX CKAN API for the dataset
+        api_url = f"https://data.humdata.org/api/3/action/package_show?id=wfp-food-prices-for-{slug}"
+        api_data = fetch_json(api_url, max_retries=2, timeout=15)
+
+        if not api_data or not api_data.get("success"):
+            countries_skipped += 1
+            continue
+
+        # 2. Find the CSV resource URL
+        resources = api_data.get("result", {}).get("resources", [])
+        csv_url = None
+        for r in resources:
+            if r.get("format", "").upper() == "CSV" and r.get("url", "").endswith(".csv"):
+                csv_url = r["url"]
+                break
+
+        if not csv_url:
+            countries_skipped += 1
+            continue
+
+        # 3. Download and parse CSV
+        csv_data = fetch_url(csv_url, max_retries=2, timeout=60)
+        if not csv_data:
+            countries_skipped += 1
+            continue
+
+        content = csv_data.decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(content))
+
+        # Collect: crop_name -> year -> [prices per tonne farmgate]
+        commodity_prices = {}   # crop_name -> year_str -> [price_usd/t farmgate]
+        proxy_crops = set()     # crops that used processed proxy
+
+        for row in reader:
+            wfp_name = row.get("commodity", "").strip()
+            crop_name = WFP_COMMODITY_MAP.get(wfp_name)
+            if not crop_name:  # None or missing = skip
+                continue
+
+            # Only use actual observed prices, not WFP estimates/aggregates
+            priceflag = row.get("priceflag", "").strip()
+            if priceflag != "actual":
+                continue
+
+            # Track if this is a processed proxy
+            if wfp_name in WFP_PROCESSED_PROXIES:
+                proxy_crops.add(crop_name)
+
+            date_str = row.get("date", "")
+            if len(date_str) < 4:
+                continue
+            year_str = date_str[:4]
+            try:
+                year_int = int(year_str)
+            except ValueError:
+                continue
+            if year_int < YEAR_START:
+                continue
+
+            # Parse unit to KG
+            unit_str = row.get("unit", "")
+            kg = parse_wfp_unit_kg(unit_str)
+            if not kg or kg <= 0:
+                continue
+
+            # Get USD price
+            usdprice_str = row.get("usdprice", "").strip()
+            if not usdprice_str:
+                continue
+            try:
+                usd = float(usdprice_str)
+            except ValueError:
+                continue
+            if usd <= 0:
+                continue
+
+            # Convert to USD/tonne with farmgate discount
+            usd_per_kg = usd / kg
+            usd_per_tonne_farmgate = usd_per_kg * 1000 * FARMGATE_DISCOUNT
+
+            if crop_name not in commodity_prices:
+                commodity_prices[crop_name] = {}
+            if year_str not in commodity_prices[crop_name]:
+                commodity_prices[crop_name][year_str] = []
+            commodity_prices[crop_name][year_str].append(usd_per_tonne_farmgate)
+
+        # Average prices per year
+        if commodity_prices:
+            country_data = {}
+            country_flags = {}
+            for crop_name, year_prices in commodity_prices.items():
+                crop_years = {}
+                for year_str, prices in year_prices.items():
+                    avg = round(sum(prices) / len(prices), 1)
+                    crop_years[year_str] = avg
+                country_data[crop_name] = crop_years
+                if crop_name in proxy_crops:
+                    country_flags[crop_name] = True
+
+            wfp_prices[display_name] = country_data
+            if country_flags:
+                wfp_proxy_flags[display_name] = country_flags
+            countries_fetched += 1
+
+        time.sleep(0.5)  # Rate limiting
+
+    print(f"  ✅ WFP prices: {countries_fetched} countries fetched, "
+          f"{countries_skipped} skipped, "
+          f"{sum(len(v) for v in wfp_prices.values())} crop-country pairs")
+    if wfp_proxy_flags:
+        proxy_count = sum(len(v) for v in wfp_proxy_flags.values())
+        print(f"  📋 {proxy_count} processed proxy mappings (e.g. Maize flour → Maize)")
+    return wfp_prices, wfp_proxy_flags
 
 
 # ──────────────────── FAOSTAT Trade (TCL) ────────────────────
@@ -762,6 +1060,29 @@ def main():
         producer_prices = None
         errors.append(f"Producer Prices: {str(e)}")
 
+    # 4b. Compute regional price proxies for stale data
+    price_estimates = None
+    if producer_prices and countries_info:
+        try:
+            price_estimates = compute_price_proxies(producer_prices, countries_info)
+        except Exception as e:
+            print(f"  ❌ Price estimates error: {e}")
+            price_estimates = None
+
+    # 4c. WFP Food Prices (fallback for stale FAOSTAT prices)
+    wfp_prices = None
+    wfp_proxy_flags = None
+    try:
+        iso3_codes_for_wfp = set()
+        if countries_info:
+            iso3_codes_for_wfp = {v["code"] for v in countries_info.values()}
+        wfp_prices, wfp_proxy_flags = fetch_wfp_prices(iso3_codes_for_wfp, countries_info)
+    except Exception as e:
+        print(f"  ❌ WFP Prices error: {e}")
+        wfp_prices = None
+        wfp_proxy_flags = None
+        errors.append(f"WFP Prices: {str(e)}")
+
     # 5. FAOSTAT Trade (TCL) — primary trade source with better Africa coverage
     faostat_trade = None
     faostat_imports = None
@@ -852,6 +1173,12 @@ def main():
                     "description": "Producer prices in USD/tonne — used for revenue per hectare estimates",
                     "status": "ok" if producer_prices else "failed",
                 },
+                "wfp_prices": {
+                    "name": "WFP Food Prices (HDX)",
+                    "url": "https://data.humdata.org/dataset/wfp-food-prices",
+                    "description": "Market food prices from WFP VAM — farmgate-adjusted (×0.50) for revenue estimates",
+                    "status": "ok" if wfp_prices else "failed",
+                },
             },
             "countries": countries_list,
             "crops": crops_list,
@@ -895,6 +1222,22 @@ def main():
     elif "producerPrices" in existing:
         output["producerPrices"] = existing["producerPrices"]
         print("  ⚠️ Using previous producer prices data (fetch failed)")
+
+    if price_estimates:
+        output["priceEstimates"] = price_estimates
+    elif "priceEstimates" in existing:
+        output["priceEstimates"] = existing["priceEstimates"]
+        print("  ⚠️ Using previous price estimates data")
+
+    if wfp_prices:
+        output["wfpPrices"] = wfp_prices
+        if wfp_proxy_flags:
+            output["wfpProxyFlags"] = wfp_proxy_flags
+    elif "wfpPrices" in existing:
+        output["wfpPrices"] = existing["wfpPrices"]
+        if "wfpProxyFlags" in existing:
+            output["wfpProxyFlags"] = existing["wfpProxyFlags"]
+        print("  ⚠️ Using previous WFP prices data (fetch failed)")
     
     os.makedirs(DATA_DIR, exist_ok=True)
     tmp_file = OUTPUT_FILE + ".tmp"

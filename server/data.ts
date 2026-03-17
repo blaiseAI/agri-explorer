@@ -120,6 +120,153 @@ export function getImportData(): Record<string, Record<string, Record<string, nu
   return {};
 }
 
+export function getWfpPrices(): Record<string, Record<string, Record<string, number>>> {
+  const live = loadLiveData();
+  if (live?.wfpPrices) return live.wfpPrices;
+  return {};
+}
+
+export function getWfpProxyFlags(): Record<string, Record<string, boolean>> {
+  const live = loadLiveData();
+  if (live?.wfpProxyFlags) return live.wfpProxyFlags;
+  return {};
+}
+
+export interface BestPrice {
+  price: number;
+  year: string;
+  source: string;       // e.g. "FAOSTAT 2024" or "West Africa avg"
+  isEstimate: boolean;
+  isProcessedProxy: boolean;  // true when e.g. Maize flour → Maize grain
+}
+
+/**
+ * Get the best available price for a country/crop.
+ * Uses actual FAOSTAT data when recent (< 5yr old).
+ * Falls back to regional average from peer countries with recent data.
+ */
+export function getBestPrice(country: string, crop: string): BestPrice | null {
+  const currentYear = new Date().getFullYear();
+  const staleThreshold = currentYear - 5;
+
+  const allPrices = getProducerPrices();
+  const priceData = allPrices[country]?.[crop];
+
+  // Check actual price data first
+  if (priceData) {
+    const years = Object.keys(priceData).sort();
+    const latestYear = years[years.length - 1];
+    if (parseInt(latestYear) >= staleThreshold) {
+      // Recent data — use as-is (average of last 3 years)
+      const recentYears = years.slice(-3);
+      const prices = recentYears.map(y => priceData[y]).filter(Boolean);
+      if (prices.length > 0) {
+        const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+        return {
+          price: Math.round(avgPrice),
+          year: recentYears[recentYears.length - 1],
+          source: `FAOSTAT ${recentYears[recentYears.length - 1]}`,
+          isEstimate: false,
+          isProcessedProxy: false,
+        };
+      }
+    }
+  }
+
+  // Check WFP farmgate-adjusted prices
+  const wfpPricesData = getWfpPrices();
+  const wfpData = wfpPricesData[country]?.[crop];
+  if (wfpData) {
+    const wfpYears = Object.keys(wfpData).sort();
+    const wfpLatest = wfpYears[wfpYears.length - 1];
+    if (parseInt(wfpLatest) >= staleThreshold) {
+      const recentWfpYears = wfpYears.slice(-3);
+      const wfpPriceValues = recentWfpYears.map(y => wfpData[y]).filter(Boolean);
+      if (wfpPriceValues.length > 0) {
+        const avgWfpPrice = wfpPriceValues.reduce((a, b) => a + b, 0) / wfpPriceValues.length;
+        const proxyFlags = getWfpProxyFlags();
+        const isProxy = proxyFlags[country]?.[crop] === true;
+        const sourceLabel = isProxy
+          ? `WFP ${recentWfpYears[recentWfpYears.length - 1]} (est. farmgate, flour proxy)`
+          : `WFP ${recentWfpYears[recentWfpYears.length - 1]} (est. farmgate)`;
+        return {
+          price: Math.round(avgWfpPrice),
+          year: recentWfpYears[recentWfpYears.length - 1],
+          source: sourceLabel,
+          isEstimate: true,
+          isProcessedProxy: isProxy,
+        };
+      }
+    }
+  }
+
+  // Stale or missing — compute regional proxy
+  const countries = getCountries();
+  const countryInfo = countries.find((c: { name: string; code: string; region: string }) => c.name === country);
+  if (!countryInfo) return null;
+
+  const region = countryInfo.region;
+  const peerCountries = countries.filter((c: { name: string; code: string; region: string }) => c.region === region && c.name !== country);
+
+  // Try regional peers first
+  let peerPrices: number[] = [];
+  for (const peer of peerCountries) {
+    const peerData = allPrices[peer.name]?.[crop];
+    if (!peerData) continue;
+    const peerYears = Object.keys(peerData).sort();
+    const peerLatest = peerYears[peerYears.length - 1];
+    if (parseInt(peerLatest) >= staleThreshold) {
+      peerPrices.push(peerData[peerLatest]);
+    }
+  }
+
+  let sourceLabel = `${region} avg`;
+
+  // If no regional peers, try continent-wide
+  if (peerPrices.length === 0) {
+    for (const [peerCountry, peerCrops] of Object.entries(allPrices)) {
+      if (peerCountry === country) continue;
+      const peerData = peerCrops[crop];
+      if (!peerData) continue;
+      const peerYears = Object.keys(peerData).sort();
+      const peerLatest = peerYears[peerYears.length - 1];
+      if (parseInt(peerLatest) >= staleThreshold) {
+        peerPrices.push(peerData[peerLatest]);
+      }
+    }
+    sourceLabel = "Africa avg";
+  }
+
+  if (peerPrices.length === 0) {
+    // Last resort: use the actual stale price if we have one
+    if (priceData) {
+      const years = Object.keys(priceData).sort();
+      const recentYears = years.slice(-3);
+      const prices = recentYears.map(y => priceData[y]).filter(Boolean);
+      if (prices.length > 0) {
+        const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+        return {
+          price: Math.round(avgPrice),
+          year: recentYears[recentYears.length - 1],
+          source: `FAOSTAT ${recentYears[recentYears.length - 1]}`,
+          isEstimate: false,
+          isProcessedProxy: false,
+        };
+      }
+    }
+    return null;
+  }
+
+  const avgPrice = peerPrices.reduce((a, b) => a + b, 0) / peerPrices.length;
+  return {
+    price: Math.round(avgPrice),
+    year: String(currentYear),
+    source: sourceLabel,
+    isEstimate: true,
+    isProcessedProxy: false,
+  };
+}
+
 // ──────────────────── Fallback Constants ────────────────────
 
 const COUNTRIES_FALLBACK = [

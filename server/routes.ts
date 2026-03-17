@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices } from "./data";
+import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices, getBestPrice } from "./data";
 import { generateInsights, generateDiverseInsights } from "./insights";
 
 export async function registerRoutes(
@@ -45,6 +45,7 @@ export async function registerRoutes(
 
     const PRODUCER_PRICES = getProducerPrices();
     const cropPrices = PRODUCER_PRICES[country]?.[crop] || null;
+    const bestPrice = getBestPrice(country, crop);
     const WORLD_BANK_DATA = getWorldBankData();
     const wbCountry = WORLD_BANK_DATA[country];
 
@@ -54,6 +55,13 @@ export async function registerRoutes(
       timeSeries,
       globalAvgYield: GLOBAL_AVG_YIELDS[crop] || null,
       producerPrices: cropPrices,
+      bestPrice: bestPrice ? {
+        price: bestPrice.price,
+        year: bestPrice.year,
+        source: bestPrice.source,
+        isEstimate: bestPrice.isEstimate,
+        isProcessedProxy: bestPrice.isProcessedProxy,
+      } : null,
       riskFactors: wbCountry ? {
         politicalStability: wbCountry.politicalStability ?? null,
         ruleOfLaw: wbCountry.ruleOfLaw ?? null,
@@ -88,21 +96,20 @@ export async function registerRoutes(
       const latestYear = years[years.length - 1];
       const firstYear = years[0];
 
-      // Compute revenue per hectare from producer prices
-      const priceData = PRODUCER_PRICES[country]?.[cropName];
+      // Compute revenue per hectare from best available price
+      const bestPrice = getBestPrice(country, cropName);
       let revenuePerHa: number | null = null;
       let pricePerTonne: number | null = null;
       let priceYear: string | null = null;
-      if (priceData && data.yield[latestYear]) {
-        const recentYears = Object.keys(priceData).sort().slice(-3);
-        const prices = recentYears.map(y => priceData[y]).filter(Boolean);
-        if (prices.length > 0) {
-          const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-          const yieldTonnesPerHa = data.yield[latestYear] / 10000;
-          revenuePerHa = Math.round(yieldTonnesPerHa * avgPrice);
-          pricePerTonne = Math.round(avgPrice);
-          priceYear = recentYears[recentYears.length - 1];
-        }
+      let priceIsEstimate = false;
+      let priceSource: string | null = null;
+      if (bestPrice && data.yield[latestYear]) {
+        const yieldTonnesPerHa = data.yield[latestYear] / 10000;
+        revenuePerHa = Math.round(yieldTonnesPerHa * bestPrice.price);
+        pricePerTonne = bestPrice.price;
+        priceYear = bestPrice.year;
+        priceIsEstimate = bestPrice.isEstimate;
+        priceSource = bestPrice.source;
       }
 
       // Compute export orientation tag
@@ -110,17 +117,12 @@ export async function registerRoutes(
       const latestTradeYear = tradeYears[tradeYears.length - 1];
       const tradeVal = latestTradeYear ? trade?.[cropName]?.[latestTradeYear] : null;
       let exportOrientation: string | null = null;
-      if (tradeVal && priceData && data.production[latestYear]) {
-        const recentYears = Object.keys(priceData).sort().slice(-3);
-        const pricesArr = recentYears.map(y => priceData[y]).filter(Boolean);
-        if (pricesArr.length > 0) {
-          const avgP = pricesArr.reduce((a: number, b: number) => a + b, 0) / pricesArr.length;
-          const exportUSD = tradeVal * 1_000_000;
-          const prodTonnes = data.production[latestYear] * 1000;
-          const ratio = exportUSD / (prodTonnes * avgP);
-          exportOrientation = ratio > 0.30 ? 'Export-oriented'
-            : ratio > 0.05 ? 'Mixed market' : 'Domestic market';
-        }
+      if (tradeVal && bestPrice && data.production[latestYear]) {
+        const exportUSD = tradeVal * 1_000_000;
+        const prodTonnes = data.production[latestYear] * 1000;
+        const ratio = exportUSD / (prodTonnes * bestPrice.price);
+        exportOrientation = ratio > 0.30 ? 'Export-oriented'
+          : ratio > 0.05 ? 'Mixed market' : 'Domestic market';
       }
 
       return {
@@ -140,6 +142,8 @@ export async function registerRoutes(
         revenuePerHa,
         pricePerTonne,
         priceYear,
+        priceIsEstimate,
+        priceSource,
         exportOrientation,
       };
     }).filter(c => c.latestProduction > 0);
@@ -195,7 +199,6 @@ export async function registerRoutes(
     const GLOBAL_AVG_YIELDS = getGlobalAvgYields();
     const TRADE_DATA = getTradeData();
     const COUNTRIES = getCountries();
-    const PRODUCER_PRICES = getProducerPrices();
 
     const countries = COUNTRIES.map(c => {
       const data = CROP_DATA[c.name]?.[crop];
@@ -209,33 +212,23 @@ export async function registerRoutes(
       const tradeYears = Object.keys(TRADE_DATA[c.name]?.[crop] || {}).sort();
       const latestTradeYear = tradeYears[tradeYears.length - 1];
 
-      // Compute revenue per hectare from producer prices
-      const priceData = PRODUCER_PRICES[c.name]?.[crop];
+      // Compute revenue per hectare from best available price
+      const bestPrice = getBestPrice(c.name, crop);
       let revenuePerHa: number | null = null;
-      if (priceData && data.yield[latestYear]) {
-        const recentYears = Object.keys(priceData).sort().slice(-3);
-        const prices = recentYears.map(y => priceData[y]).filter(Boolean);
-        if (prices.length > 0) {
-          const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-          const yieldTonnesPerHa = data.yield[latestYear] / 10000;
-          revenuePerHa = Math.round(yieldTonnesPerHa * avgPrice);
-        }
+      if (bestPrice && data.yield[latestYear]) {
+        const yieldTonnesPerHa = data.yield[latestYear] / 10000;
+        revenuePerHa = Math.round(yieldTonnesPerHa * bestPrice.price);
       }
 
       // Compute export orientation tag
       let exportOrientation: string | null = null;
       const tradeValUSD = latestTradeYear ? TRADE_DATA[c.name]?.[crop]?.[latestTradeYear] : null;
-      if (tradeValUSD && priceData && data.production[latestYear]) {
-        const recentPriceYears = Object.keys(priceData).sort().slice(-3);
-        const pricesArr = recentPriceYears.map(y => priceData[y]).filter(Boolean);
-        if (pricesArr.length > 0) {
-          const avgP = pricesArr.reduce((a: number, b: number) => a + b, 0) / pricesArr.length;
-          const exportUSD = tradeValUSD * 1_000_000;
-          const prodTonnes = data.production[latestYear] * 1000;
-          const ratio = exportUSD / (prodTonnes * avgP);
-          exportOrientation = ratio > 0.30 ? 'Export-oriented'
-            : ratio > 0.05 ? 'Mixed market' : 'Domestic market';
-        }
+      if (tradeValUSD && bestPrice && data.production[latestYear]) {
+        const exportUSD = tradeValUSD * 1_000_000;
+        const prodTonnes = data.production[latestYear] * 1000;
+        const ratio = exportUSD / (prodTonnes * bestPrice.price);
+        exportOrientation = ratio > 0.30 ? 'Export-oriented'
+          : ratio > 0.05 ? 'Mixed market' : 'Domestic market';
       }
 
       return {
