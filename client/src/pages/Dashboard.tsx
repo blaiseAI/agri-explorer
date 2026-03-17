@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   TrendingUp,
@@ -26,9 +28,15 @@ import {
   Search,
   Sparkles,
   Info,
+  Download,
+  ArrowUpDown,
+  Shield,
+  Truck,
+  Trophy,
 } from "lucide-react";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useMonetization } from "@/hooks/useMonetization";
+import { downloadCSV } from "@/lib/export";
 
 const INSIGHT_ICONS: Record<string, any> = {
   opportunity: Target,
@@ -428,6 +436,9 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Investment Leaderboard */}
+      <LeaderboardSection lastUpdated={lastUpdated} />
+
       {/* Data Sources */}
       {sources && (
         <Card>
@@ -470,6 +481,270 @@ export default function Dashboard() {
         It does not constitute financial advice. Data is sourced from FAOSTAT, World Bank,
         and UN Comtrade and refreshed periodically. Always conduct independent due diligence before making investment decisions.
       </div>
+    </div>
+  );
+}
+
+function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
+  const { data: leaderboard, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/leaderboard"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+  });
+
+  const [region, setRegion] = useState("All");
+  const [signalType, setSignalType] = useState("All");
+  const [minStability, setMinStability] = useState(25);
+  const [minLogistics, setMinLogistics] = useState(2.0);
+  const [sortKey, setSortKey] = useState<string>("score");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [showAll, setShowAll] = useState(false);
+
+  const filtered = useMemo(() => {
+    if (!leaderboard) return [];
+    let data = leaderboard.filter((e: any) => {
+      if (region !== "All" && e.region !== region) return false;
+      if (signalType !== "All" && e.signalType !== signalType) return false;
+      if (e.politicalStability !== null && e.politicalStability < minStability) return false;
+      if (e.logisticsIndex !== null && e.logisticsIndex < minLogistics) return false;
+      return true;
+    });
+    data.sort((a: any, b: any) => {
+      const av = a[sortKey] ?? -Infinity;
+      const bv = b[sortKey] ?? -Infinity;
+      return sortDir === "desc" ? bv - av : av - bv;
+    });
+    // Re-rank after filtering
+    return data.map((e: any, i: number) => ({ ...e, rank: i + 1 }));
+  }, [leaderboard, region, signalType, minStability, minLogistics, sortKey, sortDir]);
+
+  const visible = showAll ? filtered : filtered.slice(0, 20);
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir(d => d === "desc" ? "asc" : "desc");
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  };
+
+  const SortHeader = ({ label, field, className = "" }: { label: string; field: string; className?: string }) => (
+    <th
+      className={`px-3 py-2 text-left text-[11px] font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none ${className}`}
+      onClick={() => handleSort(field)}
+    >
+      <span className="flex items-center gap-1">
+        {label}
+        {sortKey === field ? (
+          sortDir === "desc" ? <ChevronDown size={10} /> : <ChevronUp size={10} />
+        ) : (
+          <ArrowUpDown size={9} className="opacity-30" />
+        )}
+      </span>
+    </th>
+  );
+
+  const stabilityColor = (v: number | null) => {
+    if (v === null) return "text-muted-foreground";
+    if (v < 25) return "text-red-600 dark:text-red-400";
+    if (v < 50) return "text-amber-600 dark:text-amber-400";
+    return "text-emerald-600 dark:text-emerald-400";
+  };
+
+  const logisticsColor = (v: number | null) => {
+    if (v === null) return "text-muted-foreground";
+    if (v < 2.5) return "text-red-600 dark:text-red-400";
+    if (v < 3.5) return "text-amber-600 dark:text-amber-400";
+    return "text-emerald-600 dark:text-emerald-400";
+  };
+
+  const handleExportCSV = () => {
+    if (!filtered.length) return;
+    const exportData = filtered.map((e: any) => ({
+      Rank: e.rank, Country: e.country, Region: e.region, Crop: e.crop,
+      Signal: e.signalType, Score: e.score, "Rev/ha ($)": e.revenuePerHa ?? "",
+      "Growth (%)": e.prodGrowth, "Exports ($M)": e.exportValue ?? "",
+      "Stability (pctl)": e.politicalStability ?? "", "Logistics (1-5)": e.logisticsIndex ?? "",
+    }));
+    downloadCSV(exportData, "agri-leaderboard");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-sm font-medium flex items-center gap-2">
+          <Trophy size={15} className="text-primary" />
+          Investment Leaderboard
+        </h2>
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 className="text-sm font-medium flex items-center gap-2">
+            <Trophy size={15} className="text-primary" />
+            Investment Leaderboard
+          </h2>
+          {lastUpdated && (
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Data as of 2024 · Scores updated {formatDate(lastUpdated)}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={handleExportCSV}
+          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+        >
+          <Download size={12} /> Export CSV
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Select value={region} onValueChange={setRegion}>
+          <SelectTrigger className="w-[160px] h-8 text-xs">
+            <SelectValue placeholder="Region" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Regions</SelectItem>
+            {REGION_ORDER.map(r => (
+              <SelectItem key={r} value={r}>{r}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="flex gap-1">
+          {["All", "growth", "yield_gap", "trade", "opportunity"].map(t => (
+            <button
+              key={t}
+              onClick={() => setSignalType(t)}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                signalType === t
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t === "All" ? "All" : t.replace("_", " ")}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-1.5">
+            <Shield size={11} className="text-muted-foreground" />
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap">Stability ≥{minStability}</span>
+            <Slider
+              value={[minStability]}
+              onValueChange={([v]) => setMinStability(v)}
+              max={100}
+              step={5}
+              className="w-[80px]"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Truck size={11} className="text-muted-foreground" />
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap">Logistics ≥{minLogistics.toFixed(1)}</span>
+            <Slider
+              value={[minLogistics * 10]}
+              onValueChange={([v]) => setMinLogistics(v / 10)}
+              max={50}
+              step={5}
+              className="w-[80px]"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-12 text-sm text-muted-foreground">
+          No opportunities match your filters — try adjusting region or risk thresholds.
+        </div>
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <SortHeader label="#" field="rank" className="w-10" />
+                  <th className="px-3 py-2 text-left text-[11px] font-medium text-muted-foreground">Country + Crop</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-medium text-muted-foreground">Signal</th>
+                  <SortHeader label="Score" field="score" />
+                  <SortHeader label="Rev/ha" field="revenuePerHa" />
+                  <SortHeader label="Growth" field="prodGrowth" />
+                  <SortHeader label="Exports" field="exportValue" />
+                  <SortHeader label="Stability" field="politicalStability" />
+                  <SortHeader label="Logistics" field="logisticsIndex" />
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((e: any) => {
+                  const Icon = INSIGHT_ICONS[e.signalType] || Lightbulb;
+                  return (
+                    <Link key={`${e.country}-${e.crop}`} href={`/explore/${e.country}/${e.crop}`}>
+                      <tr className="border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors">
+                        <td className="px-3 py-2 text-xs text-muted-foreground tabular-nums">{e.rank}</td>
+                        <td className="px-3 py-2">
+                          <span className="font-medium text-sm">{e.country}</span>
+                          <span className="text-muted-foreground mx-1.5">·</span>
+                          <span className="text-sm">{e.crop}</span>
+                          <span className="text-[11px] text-muted-foreground ml-1.5">{e.region}</span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${INSIGHT_COLORS[e.signalType] || ""}`}>
+                            <Icon size={9} className="mr-0.5" />
+                            {e.signalType.replace("_", " ")}
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-2 tabular-nums text-xs font-medium flex items-center gap-1">
+                          {e.score}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info size={9} className="opacity-30 hover:opacity-100 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[220px] text-xs">
+                              Composite score: production growth, revenue/ha, yield gap vs Africa avg, and export market strength.
+                            </TooltipContent>
+                          </Tooltip>
+                        </td>
+                        <td className="px-3 py-2 tabular-nums text-xs">
+                          {e.revenuePerHa != null ? `$${e.revenuePerHa.toLocaleString()}` : "—"}
+                        </td>
+                        <td className={`px-3 py-2 tabular-nums text-xs ${e.prodGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                          {e.prodGrowth >= 0 ? "+" : ""}{e.prodGrowth.toFixed(1)}%
+                        </td>
+                        <td className="px-3 py-2 tabular-nums text-xs">
+                          {e.exportValue != null ? `$${e.exportValue}M` : "—"}
+                        </td>
+                        <td className={`px-3 py-2 tabular-nums text-xs ${stabilityColor(e.politicalStability)}`}>
+                          {e.politicalStability != null ? `${Math.round(e.politicalStability)}th` : "—"}
+                        </td>
+                        <td className={`px-3 py-2 tabular-nums text-xs ${logisticsColor(e.logisticsIndex)}`}>
+                          {e.logisticsIndex != null ? e.logisticsIndex.toFixed(1) : "—"}
+                        </td>
+                      </tr>
+                    </Link>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {filtered.length > 20 && (
+            <div className="px-3 py-2 border-t text-center">
+              <button
+                onClick={() => setShowAll(!showAll)}
+                className="text-xs text-primary font-medium hover:underline"
+              >
+                {showAll ? "Show top 20" : `Show all ${filtered.length} opportunities`}
+              </button>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

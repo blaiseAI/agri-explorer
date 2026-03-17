@@ -11,7 +11,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, BarChart, Bar, ReferenceLine,
 } from "recharts";
-import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb, Download, Sparkles, Zap, AlertTriangle, Ship, DollarSign, ChevronRight } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb, Download, Sparkles, Zap, AlertTriangle, Ship, DollarSign, ChevronRight, Compass } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
@@ -78,6 +78,12 @@ export default function CropDetail() {
   const { data: insights } = useQuery<any[]>({
     queryKey: ["/api/insights", `?country=${country}&crop=${crop}`],
     queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  const { data: similarOps } = useQuery<any[]>({
+    queryKey: ["/api/similar", country, crop],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: !!country && !!crop,
   });
 
   // Cross-link: other crops in same country
@@ -567,6 +573,46 @@ export default function CropDetail() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Similar Opportunities */}
+      {similarOps && similarOps.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-medium flex items-center gap-2">
+            <Compass size={15} className="text-primary" />
+            You Might Also Consider
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {similarOps.map((op: any) => (
+              <Link key={`${op.country}-${op.crop}`} href={`/explore/${op.country}/${op.crop}`}>
+                <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full">
+                  <CardContent className="pt-4 pb-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <span className="text-sm font-medium">{op.country} · {op.crop}</span>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 tabular-nums">
+                        {op.score}/100
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs tabular-nums">
+                      {op.revenuePerHa != null && (
+                        <span className="text-muted-foreground">
+                          ${op.revenuePerHa.toLocaleString()}/ha
+                        </span>
+                      )}
+                      <span className={op.prodGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+                        {op.prodGrowth >= 0 ? "+" : ""}{op.prodGrowth.toFixed(1)}% growth
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">{op.reason}</p>
+                    <div className="flex items-center gap-1 text-xs text-primary font-medium pt-1">
+                      Explore <ChevronRight size={12} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

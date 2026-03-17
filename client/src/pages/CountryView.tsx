@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { TrendingUp, TrendingDown, ArrowRight, ChevronRight, Globe, Users, Briefcase, Sprout, Info, Search, ChevronDown, Download, Ship, ArrowUpDown } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, ChevronRight, Globe, Users, Briefcase, Sprout, Info, Search, ChevronDown, Download, Ship, ArrowUpDown, Trophy } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
@@ -110,6 +110,12 @@ export default function CountryView() {
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/country", country],
     queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  const { data: topCrops } = useQuery<any[]>({
+    queryKey: ["/api/country", country, "top-crops"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: !!country,
   });
 
   const filteredCountries = useMemo(() => {
@@ -508,6 +514,54 @@ export default function CountryView() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Top Crops for Investment */}
+      {topCrops && topCrops.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-medium flex items-center gap-2">
+            <Trophy size={15} className="text-primary" />
+            Top Crops for Investment
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {topCrops.map((tc: any, i: number) => {
+              const medals = ["🥇", "🥈", "🥉"];
+              const medalColors = [
+                "border-amber-400/40 bg-amber-50/30 dark:bg-amber-900/10",
+                "border-slate-400/30 bg-slate-50/20 dark:bg-slate-800/10",
+                "border-orange-300/30 bg-orange-50/20 dark:bg-orange-900/10",
+              ];
+              return (
+                <Link key={tc.crop} href={`/explore/${country}/${tc.crop}`}>
+                  <Card className={`hover:border-primary/30 transition-colors cursor-pointer h-full border ${medalColors[i] || ""}`}>
+                    <CardContent className="pt-4 pb-4 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <span className="text-sm font-medium">{medals[i]} {tc.crop}</span>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 tabular-nums">
+                          {tc.fitScore}/100
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs tabular-nums">
+                        {tc.revenuePerHa != null && (
+                          <span className="text-muted-foreground">
+                            ${tc.revenuePerHa.toLocaleString()}/ha
+                          </span>
+                        )}
+                        <span className={tc.prodGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+                          {tc.prodGrowth >= 0 ? "+" : ""}{tc.prodGrowth}% growth
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">{tc.reason}</p>
+                      <div className="flex items-center gap-1 text-xs text-primary font-medium pt-1">
+                        Explore <ArrowRight size={12} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Crop cards */}

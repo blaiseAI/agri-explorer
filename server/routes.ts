@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices, getBestPrice } from "./data";
-import { generateInsights, generateDiverseInsights } from "./insights";
+import { generateInsights, generateDiverseInsights, generateLeaderboard, generateTopCrops, generateSimilarOpportunities } from "./insights";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -260,6 +260,23 @@ export async function registerRoutes(
     const crop = req.query.crop as string | undefined;
     const insights = generateInsights(country, crop);
     res.json(insights);
+  });
+
+  // Leaderboard — top 100 ranked crop×country opportunities
+  app.get("/api/leaderboard", (_req, res) => {
+    res.json(generateLeaderboard());
+  });
+
+  // Top crops for investment in a country
+  app.get("/api/country/:name/top-crops", (req, res) => {
+    const country = req.params.name;
+    res.json(generateTopCrops(country));
+  });
+
+  // Similar opportunities for a country/crop pair
+  app.get("/api/similar/:country/:crop", (req, res) => {
+    const { country, crop } = req.params;
+    res.json(generateSimilarOpportunities(country, crop));
   });
 
   // Overview dashboard data
