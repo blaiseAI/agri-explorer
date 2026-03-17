@@ -194,13 +194,15 @@ export default function Dashboard() {
         <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Top African Crops by Volume</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {topKpiCrops.map((crop) => (
-          <KPICard
-            key={crop}
-            label={`Total ${crop} Production`}
-            value={totalProduction?.[crop] ? formatNumber(totalProduction[crop]) : "\u2014"}
-            subtext={`tonnes (${latestYear || "latest"})`}
-            cagr={cropGrowth?.[crop]}
-          />
+          <Link key={crop} href={`/crop/${crop}`}>
+            <KPICard
+              label={`Total ${crop} Production`}
+              value={totalProduction?.[crop] ? formatNumber(totalProduction[crop]) : "\u2014"}
+              subtext={`tonnes (${latestYear || "latest"})`}
+              cagr={cropGrowth?.[crop]}
+              clickable
+            />
+          </Link>
         ))}
         </div>
       </div>
@@ -460,9 +462,9 @@ export default function Dashboard() {
   );
 }
 
-function KPICard({ label, value, subtext, cagr }: { label: string; value: string; subtext: string; cagr?: number }) {
+function KPICard({ label, value, subtext, cagr, clickable }: { label: string; value: string; subtext: string; cagr?: number; clickable?: boolean }) {
   return (
-    <Card>
+    <Card className={clickable ? "hover:border-primary/30 transition-colors cursor-pointer group" : ""}>
       <CardContent className="pt-4 pb-4">
         <p className="text-xs text-muted-foreground mb-1">{label}</p>
         <div className="flex items-baseline gap-2">
@@ -476,7 +478,14 @@ function KPICard({ label, value, subtext, cagr }: { label: string; value: string
             </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5">{subtext}</p>
+        <div className="flex items-center justify-between mt-0.5">
+          <p className="text-xs text-muted-foreground">{subtext}</p>
+          {clickable && (
+            <span className="text-xs text-primary font-medium flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              Explore <ArrowRight size={10} />
+            </span>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
