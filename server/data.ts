@@ -108,6 +108,12 @@ export function getTradeData(): Record<string, Record<string, Record<string, num
   return TRADE_DATA_FALLBACK;
 }
 
+export function getProducerPrices(): Record<string, Record<string, Record<string, number>>> {
+  const live = loadLiveData();
+  if (live?.producerPrices) return live.producerPrices;
+  return {};
+}
+
 // ──────────────────── Fallback Constants ────────────────────
 
 const COUNTRIES_FALLBACK = [

@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { getCropData, getTradeData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata } from "./data";
+import { getCropData, getTradeData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices } from "./data";
 import { generateInsights, generateDiverseInsights } from "./insights";
 
 export async function registerRoutes(
@@ -43,11 +43,15 @@ export async function registerRoutes(
       area: cropData.area[year] || 0,
     })).filter(d => d.production > 0 || d.yield > 0 || d.area > 0);
 
+    const PRODUCER_PRICES = getProducerPrices();
+    const cropPrices = PRODUCER_PRICES[country]?.[crop] || null;
+
     res.json({
       country,
       crop,
       timeSeries,
       globalAvgYield: GLOBAL_AVG_YIELDS[crop] || null,
+      producerPrices: cropPrices,
     });
   });
 
@@ -65,11 +69,26 @@ export async function registerRoutes(
 
     const wb = WORLD_BANK_DATA[country];
     const trade = TRADE_DATA[country];
+    const PRODUCER_PRICES = getProducerPrices();
 
     const crops = Object.entries(countryData).map(([cropName, data]) => {
       const years = Object.keys(data.production).sort();
       const latestYear = years[years.length - 1];
       const firstYear = years[0];
+
+      // Compute revenue per hectare from producer prices
+      const priceData = PRODUCER_PRICES[country]?.[cropName];
+      let revenuePerHa: number | null = null;
+      if (priceData && data.yield[latestYear]) {
+        const recentYears = Object.keys(priceData).sort().slice(-3);
+        const prices = recentYears.map(y => priceData[y]).filter(Boolean);
+        if (prices.length > 0) {
+          const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+          const yieldTonnesPerHa = data.yield[latestYear] / 10000;
+          revenuePerHa = Math.round(yieldTonnesPerHa * avgPrice);
+        }
+      }
+
       return {
         name: cropName,
         latestProduction: data.production[latestYear] || 0,
@@ -83,6 +102,7 @@ export async function registerRoutes(
           ? +(((data.yield[latestYear] - data.yield[firstYear]) / data.yield[firstYear]) * 100).toFixed(1)
           : 0,
         tradeData: trade?.[cropName] || null,
+        revenuePerHa,
       };
     }).filter(c => c.latestProduction > 0);
 
@@ -106,6 +126,7 @@ export async function registerRoutes(
     const GLOBAL_AVG_YIELDS = getGlobalAvgYields();
     const TRADE_DATA = getTradeData();
     const COUNTRIES = getCountries();
+    const PRODUCER_PRICES = getProducerPrices();
 
     const countries = COUNTRIES.map(c => {
       const data = CROP_DATA[c.name]?.[crop];
@@ -119,6 +140,19 @@ export async function registerRoutes(
       const tradeYears = Object.keys(TRADE_DATA[c.name]?.[crop] || {}).sort();
       const latestTradeYear = tradeYears[tradeYears.length - 1];
 
+      // Compute revenue per hectare from producer prices
+      const priceData = PRODUCER_PRICES[c.name]?.[crop];
+      let revenuePerHa: number | null = null;
+      if (priceData && data.yield[latestYear]) {
+        const recentYears = Object.keys(priceData).sort().slice(-3);
+        const prices = recentYears.map(y => priceData[y]).filter(Boolean);
+        if (prices.length > 0) {
+          const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+          const yieldTonnesPerHa = data.yield[latestYear] / 10000;
+          revenuePerHa = Math.round(yieldTonnesPerHa * avgPrice);
+        }
+      }
+
       return {
         country: c.name,
         code: c.code,
@@ -130,6 +164,7 @@ export async function registerRoutes(
           ? +(((data.production[latestYear] - data.production[firstYear]) / data.production[firstYear]) * 100).toFixed(1)
           : 0,
         tradeValue: latestTradeYear ? TRADE_DATA[c.name]?.[crop]?.[latestTradeYear] : null,
+        revenuePerHa,
       };
     }).filter(Boolean);
 

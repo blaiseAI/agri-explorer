@@ -11,10 +11,11 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, BarChart, Bar, ReferenceLine,
 } from "recharts";
-import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb, Download } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb, Download, Sparkles, Zap, AlertTriangle, Ship, DollarSign } from "lucide-react";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useToast } from "@/hooks/use-toast";
+import { useMonetization } from "@/hooks/useMonetization";
 
 const FLAG_MAP: Record<string, string> = {
   UGA: "🇺🇬", KEN: "🇰🇪", RWA: "🇷🇼", NGA: "🇳🇬", GHA: "🇬🇭", TZA: "🇹🇿",
@@ -28,12 +29,37 @@ const FLAG_MAP: Record<string, string> = {
   SYC: "🇸🇨", COM: "🇰🇲", DJI: "🇩🇯", ERI: "🇪🇷", SOM: "🇸🇴", BDI: "🇧🇮",
 };
 
-const INSIGHT_COLORS: Record<string, string> = {
-  opportunity: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-  growth: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  yield_gap: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  trade: "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400",
-  warning: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+const INSIGHT_CONFIG: Record<string, { badge: string; bg: string; icon: any; accent: string }> = {
+  opportunity: {
+    badge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
+    bg: "bg-gradient-to-br from-emerald-50/50 to-transparent dark:from-emerald-950/20 dark:to-transparent",
+    icon: Sparkles,
+    accent: "text-emerald-500 dark:text-emerald-400",
+  },
+  growth: {
+    badge: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+    bg: "bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20 dark:to-transparent",
+    icon: TrendingUp,
+    accent: "text-blue-500 dark:text-blue-400",
+  },
+  yield_gap: {
+    badge: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+    bg: "bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-950/20 dark:to-transparent",
+    icon: Target,
+    accent: "text-amber-500 dark:text-amber-400",
+  },
+  trade: {
+    badge: "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400",
+    bg: "bg-gradient-to-br from-violet-50/50 to-transparent dark:from-violet-950/20 dark:to-transparent",
+    icon: Ship,
+    accent: "text-violet-500 dark:text-violet-400",
+  },
+  warning: {
+    badge: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    bg: "bg-gradient-to-br from-red-50/50 to-transparent dark:from-red-950/20 dark:to-transparent",
+    icon: AlertTriangle,
+    accent: "text-red-500 dark:text-red-400",
+  },
 };
 
 export default function CropDetail() {
@@ -41,6 +67,7 @@ export default function CropDetail() {
   const country = params.country || "Nigeria";
   const crop = params.crop || "Maize";
   const { toast } = useToast();
+  const { isMonetizationEnabled } = useMonetization();
 
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/crop-data", country, crop],
@@ -104,11 +131,38 @@ export default function CropDetail() {
     ? ((globalAvgYield - last.yield) / globalAvgYield * 100).toFixed(0)
     : null;
 
+  // Revenue per hectare from producer prices
+  const producerPrices = data?.producerPrices;
+  let revenuePerHa: number | null = null;
+  let avgPriceUsed: number | null = null;
+  if (producerPrices && last?.yield) {
+    const recentYears = Object.keys(producerPrices).sort().slice(-3);
+    const prices = recentYears.map((y: string) => producerPrices[y]).filter(Boolean);
+    if (prices.length > 0) {
+      avgPriceUsed = prices.reduce((a: number, b: number) => a + b, 0) / prices.length;
+      const yieldTonnesPerHa = last.yield / 10000;
+      revenuePerHa = Math.round(yieldTonnesPerHa * avgPriceUsed);
+    }
+  }
+
   function handleExport() {
-    toast({
-      title: "Pro Feature",
-      description: "CSV export is available on Pro. Upgrade to unlock.",
-    });
+    if (isMonetizationEnabled) {
+      toast({
+        title: "Pro Feature",
+        description: "CSV export is available on Pro. Upgrade to unlock.",
+      });
+      return;
+    }
+
+    const exportData = series.map((s: any) => ({
+      Year: s.year,
+      Country: country,
+      Crop: crop,
+      Production_tonnes: s.production,
+      Yield_hgha: s.yield,
+      Area_ha: s.area,
+    }));
+    downloadCSV(exportData, `${country}_${crop}_historical_data`);
   }
 
   return (
@@ -174,7 +228,7 @@ export default function CropDetail() {
       )}
 
       {/* Summary KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className={`grid grid-cols-2 gap-3 ${revenuePerHa !== null ? 'md:grid-cols-3 lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
         <SummaryCard
           label="Latest Production"
           value={`${last?.production?.toLocaleString() || "—"}K t`}
@@ -215,6 +269,22 @@ export default function CropDetail() {
             )}
           </CardContent>
         </Card>
+        {revenuePerHa !== null && (
+          <Card data-testid="revenue-card">
+            <CardContent className="pt-4 pb-4">
+              <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                <DollarSign size={11} />
+                Est. Gross Revenue
+              </p>
+              <span className="text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                ~${revenuePerHa.toLocaleString()}/ha
+              </span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                yield × price ({avgPriceUsed ? `$${Math.round(avgPriceUsed!)}/t` : '3yr'} avg)
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Charts — Pro only */}
@@ -247,7 +317,7 @@ export default function CropDetail() {
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <Tooltip
-                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                       formatter={(val: any) => [`${Number(val).toLocaleString()}K tonnes`, "Production"]}
                     />
                     <Area type="monotone" dataKey="production" stroke="hsl(var(--chart-1))" strokeWidth={2} fill="url(#prodGrad)" />
@@ -274,7 +344,7 @@ export default function CropDetail() {
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <Tooltip
-                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                       formatter={(val: any) => [`${Number(val).toLocaleString()} hg/ha`, "Yield"]}
                     />
                     {globalAvgYield && (
@@ -303,7 +373,7 @@ export default function CropDetail() {
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <Tooltip
-                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                       formatter={(val: any) => [`${Number(val).toLocaleString()}K ha`, "Area"]}
                     />
                     <Bar dataKey="area" fill="hsl(var(--chart-3))" radius={[3, 3, 0, 0]} maxBarSize={40} />
@@ -323,25 +393,34 @@ export default function CropDetail() {
             <Lightbulb size={15} className="text-primary" />
             Signals for {crop} in {country}
           </h2>
-          <div className="space-y-2">
-            {insights.map((insight: any) => (
-              <Card key={insight.id} className="border-l-4 border-l-primary/40" data-testid={`insight-${insight.id}`}>
-                <CardContent className="pt-3 pb-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className={`text-[11px] px-2 py-0 ${INSIGHT_COLORS[insight.type]}`}>
-                          {insight.type.replace("_", " ")}
-                        </Badge>
-                        <span className="text-xs text-primary font-medium tabular-nums">{insight.score}/100</span>
+          <div className="space-y-3">
+            {insights.map((insight: any) => {
+              const config = INSIGHT_CONFIG[insight.type] || INSIGHT_CONFIG.opportunity;
+              const Icon = config.icon;
+              return (
+                <Card key={insight.id} className={`overflow-hidden ${config.bg}`} data-testid={`insight-${insight.id}`}>
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-start gap-4">
+                      <div className={`shrink-0 mt-0.5 p-2 rounded-lg bg-background/80 border ${config.accent}`}>
+                        <Icon size={16} />
                       </div>
-                      <p className="text-sm font-medium">{insight.title}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{insight.description}</p>
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className={`text-[11px] px-2 py-0 ${config.badge}`}>
+                            {insight.type.replace("_", " ")}
+                          </Badge>
+                          <span className="text-[11px] text-muted-foreground font-medium tabular-nums ml-auto">
+                            Score {insight.score}
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold leading-snug">{insight.title}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{insight.description}</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}

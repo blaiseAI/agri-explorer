@@ -5,28 +5,67 @@ import { useParams, Link, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
 import { ChevronRight, TrendingUp, TrendingDown, Info, Search, ChevronDown, Download, ArrowUpDown, Filter } from "lucide-react";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useToast } from "@/hooks/use-toast";
+import { useMonetization } from "@/hooks/useMonetization";
 
-const CHART_COLORS = [
-  "hsl(152, 55%, 28%)",
-  "hsl(25, 65%, 42%)",
-  "hsl(185, 45%, 32%)",
-  "hsl(42, 75%, 52%)",
-  "hsl(340, 45%, 42%)",
-  "hsl(200, 50%, 45%)",
-  "hsl(95, 40%, 35%)",
-  "hsl(15, 55%, 50%)",
-  "hsl(270, 35%, 45%)",
-  "hsl(175, 50%, 35%)",
-];
+const PRODUCTION_BAR_COLOR = "hsl(152, 55%, 28%)";
+const YIELD_ABOVE_AVG = "hsl(152, 55%, 28%)";
+const YIELD_BELOW_AVG = "hsl(25, 65%, 42%)";
+
+/* Custom Y-axis tick that truncates long names */
+function TruncatedTick({ x, y, payload }: any) {
+  const name = payload.value || "";
+  const display = name.length > 16 ? name.slice(0, 14) + "…" : name;
+  return (
+    <text x={x} y={y} dy={4} textAnchor="end" fontSize={11} fill="hsl(var(--muted-foreground))">
+      {display}
+    </text>
+  );
+}
+
+/* Custom tooltip for production chart */
+function ProductionTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const entry = payload[0];
+  return (
+    <div className="rounded-lg border bg-card px-3 py-2 shadow-lg text-xs">
+      <p className="font-medium text-foreground mb-1">{label}</p>
+      <p className="text-muted-foreground">
+        Production: <span className="font-semibold text-foreground tabular-nums">{Number(entry.value).toLocaleString()}K tonnes</span>
+      </p>
+    </div>
+  );
+}
+
+/* Custom tooltip for yield chart — distinguishes Africa Average */
+function YieldTooltip({ active, payload, label, globalAvg }: any) {
+  if (!active || !payload?.length) return null;
+  const yieldEntry = payload.find((p: any) => p.dataKey === "yield");
+  return (
+    <div className="rounded-lg border bg-card px-3 py-2 shadow-lg text-xs">
+      <p className="font-medium text-foreground mb-1">{label}</p>
+      {yieldEntry && (
+        <p className="text-muted-foreground">
+          Yield: <span className="font-semibold text-foreground tabular-nums">{Number(yieldEntry.value).toLocaleString()} hg/ha</span>
+        </p>
+      )}
+      {globalAvg && (
+        <p className="text-muted-foreground/70 mt-0.5 flex items-center gap-1">
+          <span className="inline-block w-3 border-t border-dashed border-muted-foreground"></span>
+          Avg: <span className="tabular-nums">{globalAvg.toLocaleString()} hg/ha</span>
+        </p>
+      )}
+    </div>
+  );
+}
 
 const ALL_REGIONS = ["East Africa", "West Africa", "Central Africa", "North Africa", "Southern Africa"];
 
-type SortField = "production" | "yield" | "area" | "yieldGap" | "trade" | "growth";
+type SortField = "production" | "yield" | "area" | "yieldGap" | "trade" | "growth" | "revenue";
 
 function getCropEmoji(crop: string): string {
   const map: Record<string, string> = {
@@ -62,6 +101,7 @@ export default function CropView() {
   const crop = params.crop || "Maize";
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isMonetizationEnabled } = useMonetization();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -152,6 +192,7 @@ export default function CropView() {
         case "yieldGap": aVal = a.yieldGap; bVal = b.yieldGap; break;
         case "trade": aVal = a.tradeValue || 0; bVal = b.tradeValue || 0; break;
         case "growth": aVal = a.productionGrowth || 0; bVal = b.productionGrowth || 0; break;
+        case "revenue": aVal = a.revenuePerHa || 0; bVal = b.revenuePerHa || 0; break;
       }
       return sortAsc ? aVal - bVal : bVal - aVal;
     });
@@ -187,10 +228,25 @@ export default function CropView() {
   }
 
   function handleExport() {
-    toast({
-      title: "Pro Feature",
-      description: "CSV export is available on Pro. Upgrade to unlock.",
-    });
+    if (isMonetizationEnabled) {
+      toast({
+        title: "Pro Feature",
+        description: "CSV export is available on Pro. Upgrade to unlock.",
+      });
+      return;
+    }
+    
+    // Allow free export when monetization is disabled
+    const exportData = sortedCountries.map((c: any) => ({
+      Country: c.country,
+      Region: c.region,
+      Production_tonnes: c.latestProduction,
+      Yield_hgha: c.latestYield,
+      Area_ha: c.latestArea,
+      ExportValue_M: c.tradeValue || 0,
+      YieldGap_pct: c.yieldGap || 0
+    }));
+    downloadCSV(exportData, `${crop}_global_comparison`);
   }
 
   if (isLoading) {
@@ -328,16 +384,9 @@ export default function CropView() {
               <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={100} />
-                <Tooltip
-                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                  formatter={(val: any) => [`${Number(val).toLocaleString()}K tonnes`, "Production"]}
-                />
-                <Bar dataKey="production" radius={[0, 4, 4, 0]} maxBarSize={28}>
-                  {chartData.map((_: any, index: number) => (
-                    <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Bar>
+                <YAxis dataKey="name" type="category" tick={<TruncatedTick />} stroke="hsl(var(--muted-foreground))" width={110} />
+                <Tooltip content={<ProductionTooltip />} cursor={false} />
+                <Bar dataKey="production" fill={PRODUCTION_BAR_COLOR} radius={[0, 4, 4, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -362,22 +411,16 @@ export default function CropView() {
               <BarChart data={yieldChartData} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={100} />
-                <Tooltip
-                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                  formatter={(val: any, name: string) => [
-                    `${Number(val).toLocaleString()} hg/ha`,
-                    name === "globalAvg" ? "Africa Average" : "Yield"
-                  ]}
-                />
+                <YAxis dataKey="name" type="category" tick={<TruncatedTick />} stroke="hsl(var(--muted-foreground))" width={110} />
+                <Tooltip content={<YieldTooltip globalAvg={globalAvgYield} />} cursor={false} />
                 {globalAvgYield && (
-                  <Bar dataKey="globalAvg" fill="none" stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" maxBarSize={0} />
+                  <ReferenceLine x={globalAvgYield} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />
                 )}
                 <Bar dataKey="yield" radius={[0, 4, 4, 0]} maxBarSize={28}>
                   {yieldChartData.map((entry: any, index: number) => (
                     <Cell
                       key={index}
-                      fill={entry.yield < (globalAvgYield || 0) ? "hsl(25, 65%, 42%)" : "hsl(152, 55%, 28%)"}
+                      fill={entry.yield < (globalAvgYield || 0) ? YIELD_BELOW_AVG : YIELD_ABOVE_AVG}
                     />
                   ))}
                 </Bar>
@@ -411,6 +454,7 @@ export default function CropView() {
           <SortHeader field="yieldGap" label="Yield Gap" sortField={sortField} sortAsc={sortAsc} onSort={handleSort} />
           <SortHeader field="trade" label="Exports" sortField={sortField} sortAsc={sortAsc} onSort={handleSort} />
           <SortHeader field="growth" label="Growth" sortField={sortField} sortAsc={sortAsc} onSort={handleSort} />
+          <SortHeader field="revenue" label="Revenue/Ha" sortField={sortField} sortAsc={sortAsc} onSort={handleSort} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

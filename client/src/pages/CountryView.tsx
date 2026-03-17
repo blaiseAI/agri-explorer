@@ -12,6 +12,7 @@ import { TrendingUp, TrendingDown, ArrowRight, ChevronRight, Globe, Users, Brief
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useToast } from "@/hooks/use-toast";
+import { useMonetization } from "@/hooks/useMonetization";
 
 const FLAG_MAP: Record<string, string> = {
   UGA: "🇺🇬", KEN: "🇰🇪", RWA: "🇷🇼", NGA: "🇳🇬", GHA: "🇬🇭", TZA: "🇹🇿",
@@ -48,6 +49,7 @@ export default function CountryView() {
   const params = useParams<{ country: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isMonetizationEnabled } = useMonetization();
 
   // Fetch countries list to find default (top producer)
   const { data: countriesData } = useQuery<any[]>({
@@ -184,10 +186,24 @@ export default function CountryView() {
   }
 
   function handleExport() {
-    toast({
-      title: "Pro Feature",
-      description: "CSV export is available on Pro. Upgrade to unlock.",
-    });
+    if (isMonetizationEnabled) {
+      toast({
+        title: "Pro Feature",
+        description: "CSV export is available on Pro. Upgrade to unlock.",
+      });
+      return;
+    }
+    
+    // Allow free export when monetization is disabled
+    const exportData = crops.map((c: any) => ({
+      Crop: c.name,
+      Production_tonnes: c.latestProduction,
+      Yield_hgha: c.latestYield,
+      Area_ha: c.latestArea,
+      ProductionGrowth_pct: c.productionGrowth || 0,
+      YieldGrowth_pct: c.yieldGrowth || 0
+    }));
+    downloadCSV(exportData, `${country}_agricultural_data`);
   }
 
   return (
@@ -197,7 +213,7 @@ export default function CountryView() {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => { setSearchOpen((v) => !v); setSearchQuery(""); }}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card text-sm hover:border-primary/30 transition-colors w-full max-w-xs"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card text-sm hover:border-primary/30 transition-colors min-w-[200px]"
             data-testid="country-selector"
           >
             <Search size={14} className="text-muted-foreground" />
@@ -208,7 +224,7 @@ export default function CountryView() {
           </button>
 
           {searchOpen && (
-            <div className="absolute top-full left-0 mt-1 w-full max-w-xs bg-card border rounded-lg shadow-lg z-50 overflow-hidden">
+            <div className="absolute top-full left-0 mt-1 w-80 bg-card border rounded-lg shadow-lg z-50 overflow-hidden">
               <div className="p-2 border-b">
                 <Input
                   ref={inputRef}
@@ -313,7 +329,7 @@ export default function CountryView() {
                   <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                   <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" domain={['auto', 'auto']} unit="%" />
                   <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                     formatter={(val: any) => [`${val}%`, "Ag % of GDP"]}
                   />
                   <Line type="monotone" dataKey="value" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={false} />
@@ -349,7 +365,7 @@ export default function CountryView() {
                     <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={90} />
                     <Tooltip
-                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                       formatter={(val: any) => [`$${Number(val).toLocaleString()}M`, "Export Value"]}
                     />
                     <Bar dataKey="value" fill="hsl(270, 45%, 50%)" radius={[0, 4, 4, 0]} maxBarSize={24} />
@@ -406,6 +422,12 @@ export default function CountryView() {
                       <div className="flex items-center gap-1.5 text-xs bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 rounded px-2 py-1">
                         <Ship size={11} />
                         <span>Exports: ${crop.tradeData[tradeYear]}M ({tradeYear})</span>
+                      </div>
+                    )}
+
+                    {crop.revenuePerHa && (
+                      <div className="flex items-center gap-1.5 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded px-2 py-1">
+                        <span>Est. ~${crop.revenuePerHa.toLocaleString()}/ha gross revenue</span>
                       </div>
                     )}
                   </CardContent>
