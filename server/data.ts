@@ -162,13 +162,37 @@ export function getBestPrice(country: string, crop: string): BestPrice | null {
       const prices = recentYears.map(y => priceData[y]).filter(Boolean);
       if (prices.length > 0) {
         const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-        return {
-          price: Math.round(avgPrice),
-          year: recentYears[recentYears.length - 1],
-          source: `FAOSTAT ${recentYears[recentYears.length - 1]}`,
-          isEstimate: false,
-          isProcessedProxy: false,
-        };
+
+        // Outlier check: compare against continental median for this crop
+        // Catches local-currency-as-USD errors (e.g. Zimbabwe ZWL)
+        const allRecentPrices: number[] = [];
+        for (const [, countryCrops] of Object.entries(allPrices)) {
+          const pd = countryCrops[crop];
+          if (!pd) continue;
+          const yrs = Object.keys(pd).sort();
+          const latest = yrs[yrs.length - 1];
+          if (parseInt(latest) >= staleThreshold) {
+            allRecentPrices.push(pd[latest]);
+          }
+        }
+
+        let isOutlier = false;
+        if (allRecentPrices.length >= 3) {
+          allRecentPrices.sort((a, b) => a - b);
+          const median = allRecentPrices[Math.floor(allRecentPrices.length / 2)];
+          isOutlier = avgPrice > median * 5;
+        }
+
+        if (!isOutlier) {
+          return {
+            price: Math.round(avgPrice),
+            year: recentYears[recentYears.length - 1],
+            source: `FAOSTAT ${recentYears[recentYears.length - 1]}`,
+            isEstimate: false,
+            isProcessedProxy: false,
+          };
+        }
+        // Outlier detected — skip this price and fall through to WFP/regional
       }
     }
   }
