@@ -476,11 +476,12 @@ export default function CountryView() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-56" style={{ height: Math.max(200, Math.min(topImports.length, 10) * 28) }}>
+            <div className="h-56" style={{ height: Math.max(200, Math.min(topImports.length, 10) * 32) }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={topImports.slice(0, 10).map((i: any) => ({
-                    name: i.crop,
+                    name: i.crop.length > 18 ? i.crop.slice(0, 16) + '…' : i.crop,
+                    fullName: i.crop,
                     value: i.value,
                   }))}
                   layout="vertical"
@@ -488,10 +489,11 @@ export default function CountryView() {
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={90} />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={120} />
                   <Tooltip
                     contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
                     formatter={(val: any) => [`$${Number(val).toLocaleString()}M`, "Import Value"]}
+                    labelFormatter={(label: any, payload: any) => payload?.[0]?.payload?.fullName || label}
                   />
                   <Bar dataKey="value" fill="hsl(35, 80%, 50%)" radius={[0, 4, 4, 0]} maxBarSize={24} />
                 </BarChart>
