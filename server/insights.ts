@@ -156,7 +156,6 @@ export function generateInsights(country?: string, crop?: string): Insight[] {
       }
 
       // 4. High agriculture GDP + declining yields = warning
-      const wb = WORLD_BANK_DATA[c];
       if (wb && yieldCAGR < -1 && lastProd >= 10) {
         const agGdpYears = Object.keys(wb.agGdpPct || {}).sort();
         const latestAgGdpYear = agGdpYears[agGdpYears.length - 1];
