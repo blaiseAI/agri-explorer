@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   TrendingUp,
   TrendingDown,
@@ -24,6 +25,7 @@ import {
   ExternalLink,
   Search,
   Sparkles,
+  Info,
 } from "lucide-react";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useMonetization } from "@/hooks/useMonetization";
@@ -399,7 +401,17 @@ export default function Dashboard() {
                         <Icon size={11} className="mr-1" />
                         {insight.type.replace("_", " ")}
                       </Badge>
-                      <span className="text-xs font-medium text-primary tabular-nums">{insight.score}/100</span>
+                      <span className="text-xs font-medium text-primary tabular-nums flex items-center gap-1">
+                        {insight.score}/100
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info size={10} className="opacity-40 hover:opacity-100 cursor-help transition-opacity" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[240px] text-xs">
+                            Composite signal score based on growth rate, production scale, governance indicators, and trade momentum. Higher = stronger signal.
+                          </TooltipContent>
+                        </Tooltip>
+                      </span>
                     </div>
                     <p className="text-sm font-medium leading-snug">{insight.title}</p>
                     <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">

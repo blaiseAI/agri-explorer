@@ -232,7 +232,9 @@ export function generateInsights(country?: string, crop?: string): Insight[] {
  * and a mix of insight types.
  */
 export function generateDiverseInsights(limit: number = 6): Insight[] {
-  const all = generateInsights();
+  const all = generateInsights()
+    // Filter out overly generic FAOSTAT aggregate categories
+    .filter(ins => !['Other Vegetables', 'Other Cereals', 'Other Crops'].includes(ins.crop || ''));
   if (all.length <= limit) return all;
 
   const COUNTRIES = getCountries();
@@ -244,14 +246,17 @@ export function generateDiverseInsights(limit: number = 6): Insight[] {
   const selected: Insight[] = [];
   const usedIds = new Set<string>();
   const countryCount: Record<string, number> = {};
+  const cropCount: Record<string, number> = {};
   const typeCovered = new Set<string>();
 
   function addInsight(ins: Insight): boolean {
     if (usedIds.has(ins.id)) return false;
     if ((countryCount[ins.country] || 0) >= 2) return false;
+    if (ins.crop && (cropCount[ins.crop] || 0) >= 1) return false;  // max 1 per crop
     selected.push(ins);
     usedIds.add(ins.id);
     countryCount[ins.country] = (countryCount[ins.country] || 0) + 1;
+    if (ins.crop) cropCount[ins.crop] = (cropCount[ins.crop] || 0) + 1;
     typeCovered.add(ins.type);
     return true;
   }
@@ -261,7 +266,7 @@ export function generateDiverseInsights(limit: number = 6): Insight[] {
   const typeOrder: string[] = ["growth", "yield_gap", "trade", "opportunity", "warning"];
   for (const t of typeOrder) {
     if (selected.length >= limit) break;
-    const best = all.find(ins => ins.type === t && !usedIds.has(ins.id) && (countryCount[ins.country] || 0) < 2);
+    const best = all.find(ins => ins.type === t && !usedIds.has(ins.id) && (countryCount[ins.country] || 0) < 2 && (!ins.crop || (cropCount[ins.crop] || 0) < 1));
     if (best) addInsight(best);
   }
 
