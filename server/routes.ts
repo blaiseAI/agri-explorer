@@ -89,6 +89,24 @@ export async function registerRoutes(
         }
       }
 
+      // Compute export orientation tag
+      const tradeYears = Object.keys(trade?.[cropName] || {}).sort();
+      const latestTradeYear = tradeYears[tradeYears.length - 1];
+      const tradeVal = latestTradeYear ? trade?.[cropName]?.[latestTradeYear] : null;
+      let exportOrientation: string | null = null;
+      if (tradeVal && priceData && data.production[latestYear]) {
+        const recentYears = Object.keys(priceData).sort().slice(-3);
+        const pricesArr = recentYears.map(y => priceData[y]).filter(Boolean);
+        if (pricesArr.length > 0) {
+          const avgP = pricesArr.reduce((a: number, b: number) => a + b, 0) / pricesArr.length;
+          const exportUSD = tradeVal * 1_000_000;
+          const prodTonnes = data.production[latestYear] * 1000;
+          const ratio = exportUSD / (prodTonnes * avgP);
+          exportOrientation = ratio > 0.30 ? 'Export-oriented'
+            : ratio > 0.05 ? 'Mixed market' : 'Domestic market';
+        }
+      }
+
       return {
         name: cropName,
         latestProduction: data.production[latestYear] || 0,
@@ -103,6 +121,7 @@ export async function registerRoutes(
           : 0,
         tradeData: trade?.[cropName] || null,
         revenuePerHa,
+        exportOrientation,
       };
     }).filter(c => c.latestProduction > 0);
 
@@ -153,6 +172,22 @@ export async function registerRoutes(
         }
       }
 
+      // Compute export orientation tag
+      let exportOrientation: string | null = null;
+      const tradeValUSD = latestTradeYear ? TRADE_DATA[c.name]?.[crop]?.[latestTradeYear] : null;
+      if (tradeValUSD && priceData && data.production[latestYear]) {
+        const recentPriceYears = Object.keys(priceData).sort().slice(-3);
+        const pricesArr = recentPriceYears.map(y => priceData[y]).filter(Boolean);
+        if (pricesArr.length > 0) {
+          const avgP = pricesArr.reduce((a: number, b: number) => a + b, 0) / pricesArr.length;
+          const exportUSD = tradeValUSD * 1_000_000;
+          const prodTonnes = data.production[latestYear] * 1000;
+          const ratio = exportUSD / (prodTonnes * avgP);
+          exportOrientation = ratio > 0.30 ? 'Export-oriented'
+            : ratio > 0.05 ? 'Mixed market' : 'Domestic market';
+        }
+      }
+
       return {
         country: c.name,
         code: c.code,
@@ -165,6 +200,7 @@ export async function registerRoutes(
           : 0,
         tradeValue: latestTradeYear ? TRADE_DATA[c.name]?.[crop]?.[latestTradeYear] : null,
         revenuePerHa,
+        exportOrientation,
       };
     }).filter(Boolean);
 

@@ -373,7 +373,7 @@ export default function CountryView() {
                 </ResponsiveContainer>
               </div>
               <p className="text-[10px] text-muted-foreground mt-2">
-                Source: UN Comtrade ({cropsWithTrade[0]?.tradeYear || "latest available"})
+                Source: FAOSTAT Trade ({cropsWithTrade[0]?.tradeYear || "latest available"})
               </p>
             </CardContent>
           </Card>
@@ -420,6 +420,15 @@ export default function CountryView() {
                       <div className="flex items-center gap-1.5 text-xs bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 rounded px-2 py-1">
                         <Ship size={11} />
                         <span>Exports: ${crop.tradeData[tradeYear]}M ({tradeYear})</span>
+                        {crop.exportOrientation && (
+                          <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                            crop.exportOrientation === 'Export-oriented'
+                              ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                              : crop.exportOrientation === 'Mixed market'
+                              ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                          }`}>{crop.exportOrientation}</span>
+                        )}
                       </div>
                     )}
 

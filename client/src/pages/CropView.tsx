@@ -494,6 +494,15 @@ export default function CropView() {
                   {c.tradeValue ? (
                     <div className="flex items-center gap-1.5 text-xs bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 rounded px-2 py-1">
                       <span className="font-medium">Export: ${c.tradeValue}M</span>
+                      {c.exportOrientation && (
+                        <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                          c.exportOrientation === 'Export-oriented'
+                            ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                            : c.exportOrientation === 'Mixed market'
+                            ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                        }`}>{c.exportOrientation}</span>
+                      )}
                     </div>
                   ) : (
                     <div className="text-[10px] text-muted-foreground/60 px-2">No export data available</div>
