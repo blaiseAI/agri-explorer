@@ -406,17 +406,15 @@ export default function CountryView() {
                       </div>
                       <div>
                         <p className="text-muted-foreground">Yield</p>
-                        <p className="font-medium tabular-nums">{crop.latestYield.toLocaleString()} hg/ha</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-medium tabular-nums">{crop.latestYield.toLocaleString()} hg/ha</p>
+                          {yieldGap !== null && yieldGap > 10 && (
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">↓{yieldGap.toFixed(0)}%</span>
+                          )}
+                        </div>
                         <GrowthBadge value={crop.yieldGrowth} />
                       </div>
                     </div>
-
-                    {yieldGap !== null && yieldGap > 10 && (
-                      <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded px-2 py-1">
-                        <Info size={11} />
-                        <span>{yieldGap.toFixed(0)}% below Africa average yield</span>
-                      </div>
-                    )}
 
                     {crop.tradeData && tradeYear && crop.tradeData[tradeYear] > 0 && (
                       <div className="flex items-center gap-1.5 text-xs bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 rounded px-2 py-1">

@@ -208,10 +208,30 @@ export async function registerRoutes(
 
     const topInsights = generateDiverseInsights(6);
 
+    // Compute CAGR for each crop (production growth over the full period)
+    const firstYear = YEARS[0];
+    const cropGrowth: Record<string, number> = {};
+    const firstYearProduction: Record<string, number> = {};
+    for (const [_country, crops] of Object.entries(CROP_DATA)) {
+      for (const [cropName, data] of Object.entries(crops)) {
+        const first = data.production[firstYear] || 0;
+        firstYearProduction[cropName] = (firstYearProduction[cropName] || 0) + first;
+      }
+    }
+    const numYears = YEARS.length - 1;
+    for (const cropName of Object.keys(totalProduction)) {
+      const latest = totalProduction[cropName];
+      const first = firstYearProduction[cropName] || 0;
+      if (first > 0 && latest > 0 && numYears > 0) {
+        cropGrowth[cropName] = +((Math.pow(latest / first, 1 / numYears) - 1) * 100).toFixed(1);
+      }
+    }
+
     res.json({
       totalProduction,
       countryProduction,
       topInsights,
+      cropGrowth,
       countriesCount: getCountries().length,
       cropsCount: getCrops().length,
       yearsRange: `${YEARS[0]}-${latestYear}`,

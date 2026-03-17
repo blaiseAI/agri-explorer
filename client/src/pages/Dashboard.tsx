@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import {
   TrendingUp,
+  TrendingDown,
   Target,
   ArrowUpRight,
   Globe,
@@ -25,6 +26,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import UpgradePrompt from "@/components/UpgradePrompt";
+import { useMonetization } from "@/hooks/useMonetization";
 
 const INSIGHT_ICONS: Record<string, any> = {
   opportunity: Target,
@@ -86,6 +88,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function Dashboard() {
+  const { isMonetizationEnabled } = useMonetization();
   const [countrySearch, setCountrySearch] = useState("");
   const [cropSearch, setCropSearch] = useState("");
   const [showAllCountries, setShowAllCountries] = useState(false);
@@ -160,7 +163,7 @@ export default function Dashboard() {
     );
   }
 
-  const { totalProduction, countryProduction, topInsights, countriesCount, cropsCount, yearsRange, lastUpdated, sources, latestYear } = data || {};
+  const { totalProduction, countryProduction, topInsights, cropGrowth, countriesCount, cropsCount, yearsRange, lastUpdated, sources, latestYear } = data || {};
 
   return (
     <div className="space-y-8">
@@ -194,22 +197,25 @@ export default function Dashboard() {
             label={`Total ${crop} Production`}
             value={totalProduction?.[crop] ? formatNumber(totalProduction[crop]) : "\u2014"}
             subtext={`tonnes (${latestYear || "latest"})`}
+            cagr={cropGrowth?.[crop]}
           />
         ))}
       </div>
 
       {/* Pro upgrade banner */}
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
-        <Sparkles size={16} className="text-primary shrink-0" />
-        <p className="text-sm text-muted-foreground flex-1">
-          Unlock <span className="font-medium text-foreground">investment signals</span>,{" "}
-          <span className="font-medium text-foreground">trade analytics</span>, and{" "}
-          <span className="font-medium text-foreground">CSV export</span> with Pro.
-        </p>
-        <Link href="/pricing">
-          <button className="text-xs font-medium text-primary hover:underline whitespace-nowrap">See Pricing →</button>
-        </Link>
-      </div>
+      {isMonetizationEnabled && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+          <Sparkles size={16} className="text-primary shrink-0" />
+          <p className="text-sm text-muted-foreground flex-1">
+            Unlock <span className="font-medium text-foreground">investment signals</span>,{" "}
+            <span className="font-medium text-foreground">trade analytics</span>, and{" "}
+            <span className="font-medium text-foreground">CSV export</span> with Pro.
+          </p>
+          <Link href="/pricing">
+            <button className="text-xs font-medium text-primary hover:underline whitespace-nowrap">See Pricing →</button>
+          </Link>
+        </div>
+      )}
 
       {/* Two column: Countries + Crops */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -377,7 +383,7 @@ export default function Dashboard() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {topInsights?.slice(0, 2).map((insight: any) => {
+          {topInsights?.slice(0, 3).map((insight: any) => {
             const Icon = INSIGHT_ICONS[insight.type] || Lightbulb;
             return (
               <Link key={insight.id} href={insight.crop ? `/explore/${insight.country}/${insight.crop}` : `/country/${insight.country}`}>
@@ -402,22 +408,6 @@ export default function Dashboard() {
               </Link>
             );
           })}
-          {topInsights && topInsights.length > 2 && (
-            <UpgradePrompt feature="All Investment Signals" description="Unlock all AI-generated investment signals to discover growth opportunities across Africa.">
-              <Card className="h-full">
-                <CardContent className="pt-4 pb-4 space-y-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <Badge variant="secondary" className="text-[11px] px-2 py-0.5">opportunity</Badge>
-                    <span className="text-xs font-medium tabular-nums">88/100</span>
-                  </div>
-                  <p className="text-sm font-medium leading-snug">Premium Signal Preview</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                    Discover high-potential agricultural markets with our proprietary scoring model.
-                  </p>
-                </CardContent>
-              </Card>
-            </UpgradePrompt>
-          )}
         </div>
       </div>
 
@@ -467,13 +457,21 @@ export default function Dashboard() {
   );
 }
 
-function KPICard({ label, value, subtext }: { label: string; value: string; subtext: string }) {
+function KPICard({ label, value, subtext, cagr }: { label: string; value: string; subtext: string; cagr?: number }) {
   return (
     <Card>
       <CardContent className="pt-4 pb-4">
         <p className="text-xs text-muted-foreground mb-1">{label}</p>
         <div className="flex items-baseline gap-2">
           <span className="text-xl font-semibold tabular-nums tracking-tight">{value}</span>
+          {cagr !== undefined && (
+            <span className={`text-[11px] font-medium tabular-nums flex items-center gap-0.5 ${
+              cagr >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+            }`}>
+              {cagr >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+              {cagr >= 0 ? '+' : ''}{cagr}%/yr
+            </span>
+          )}
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">{subtext}</p>
       </CardContent>

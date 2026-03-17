@@ -173,7 +173,9 @@ export default function CropView() {
 
   // Compute yield gap for sorting
   const withYieldGap = useMemo(() => {
-    return regionFiltered.map((c: any) => ({
+    return regionFiltered
+      .filter((c: any) => c.latestProduction > 0 || c.latestYield > 0 || c.latestArea > 0)
+      .map((c: any) => ({
       ...c,
       yieldGap: globalAvgYield && c.latestYield > 0
         ? ((globalAvgYield - c.latestYield) / globalAvgYield * 100)
@@ -443,7 +445,7 @@ export default function CropView() {
 
       {/* Country detail table with sorting */}
       <div className="space-y-3">
-        <h2 className="text-sm font-medium">Country Details ({sortedCountries.length} countries)</h2>
+        <h2 className="text-sm font-medium">Country Details ({sortedCountries.length} countries with data)</h2>
         
         {/* Sort controls */}
         <div className="flex flex-wrap items-center gap-4 px-1">
@@ -495,6 +497,16 @@ export default function CropView() {
                     </div>
                   ) : (
                     <div className="text-[10px] text-muted-foreground/60 px-2">No trade data</div>
+                  )}
+                  {c.revenuePerHa > 0 && (
+                    <div className="flex items-center gap-1.5 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded px-2 py-1">
+                      <span>~${c.revenuePerHa.toLocaleString()}/ha revenue</span>
+                    </div>
+                  )}
+                  {c.productionGrowth < -20 && (
+                    <div className="flex items-center gap-1.5 text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded px-2 py-1">
+                      <span>⚠ Sharp decline ({c.productionGrowth.toFixed(0)}%). Verify with local sources.</span>
+                    </div>
                   )}
                 </CardContent>
               </Card>
