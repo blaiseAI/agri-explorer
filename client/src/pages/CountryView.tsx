@@ -296,9 +296,9 @@ export default function CountryView() {
 
       {/* Country KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MiniKPI icon={Users} label="Population" value={latestPop ? `${(latestPop / 1000).toFixed(1)}M` : "\u2014"} />
+        <MiniKPI icon={Users} label="Population" value={latestPop ? `${(Number(latestPop) / 1000).toFixed(1)}M` : "—"} />
         <MiniKPI icon={Sprout} label="Ag % of GDP" value={latestAgGdp ? `${latestAgGdp}%` : "\u2014"} />
-        <MiniKPI icon={Globe} label="Rural Population" value={latestRural ? `${latestRural.toFixed(0)}%` : "\u2014"} />
+        <MiniKPI icon={Globe} label="Rural Population" value={latestRural != null ? `${Number(latestRural).toFixed(0)}%` : "—"} />
         <MiniKPI icon={Briefcase} label="Ag Employment" value={latestAgEmp ? `${latestAgEmp}%` : "\u2014"} />
       </div>
 
@@ -390,7 +390,7 @@ export default function CountryView() {
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">Logistics Score</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{wb.logisticsIndex.toFixed(1)} / 5.0</span>
+                    <span className="font-medium tabular-nums">{Number(wb.logisticsIndex).toFixed(1)} / 5.0</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
                       wb.logisticsIndex >= 3.0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                       : wb.logisticsIndex >= 2.0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
@@ -403,12 +403,12 @@ export default function CountryView() {
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">Irrigated Land</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{wb.irrigatedLand.toFixed(1)}%</span>
+                    <span className="font-medium tabular-nums">{Number(wb.irrigatedLand).toFixed(1)}%</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      wb.irrigatedLand >= 20 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : wb.irrigatedLand >= 5 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      Number(wb.irrigatedLand) >= 20 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : Number(wb.irrigatedLand) >= 5 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                    }`}>{wb.irrigatedLand >= 20 ? 'Irrigated' : wb.irrigatedLand >= 5 ? 'Partial' : 'Rain-dependent'}</span>
+                    }`}>{Number(wb.irrigatedLand) >= 20 ? 'Irrigated' : Number(wb.irrigatedLand) >= 5 ? 'Partial' : 'Rain-dependent'}</span>
                   </div>
                 </div>
               )}
@@ -416,19 +416,19 @@ export default function CountryView() {
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">Ag Sector Growth</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{wb.agValueGrowth > 0 ? '+' : ''}{wb.agValueGrowth.toFixed(1)}%</span>
+                    <span className="font-medium tabular-nums">{Number(wb.agValueGrowth) > 0 ? '+' : ''}{Number(wb.agValueGrowth).toFixed(1)}%</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      wb.agValueGrowth >= 3 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : wb.agValueGrowth >= 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      Number(wb.agValueGrowth) >= 3 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : Number(wb.agValueGrowth) >= 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                    }`}>{wb.agValueGrowth >= 3 ? 'GROWING' : wb.agValueGrowth >= 0 ? 'STABLE' : 'DECLINING'}</span>
+                    }`}>{Number(wb.agValueGrowth) >= 3 ? 'GROWING' : Number(wb.agValueGrowth) >= 0 ? 'STABLE' : 'DECLINING'}</span>
                   </div>
                 </div>
               )}
               {wb.fdiInflows != null && (
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">FDI Inflows (% GDP)</span>
-                  <span className="font-medium tabular-nums">{wb.fdiInflows.toFixed(1)}%</span>
+                  <span className="font-medium tabular-nums">{Number(wb.fdiInflows).toFixed(1)}%</span>
                 </div>
               )}
             </div>
