@@ -176,7 +176,7 @@ export default function CropDetail() {
   if (bestPrice && last?.yield) {
     avgPriceUsed = bestPrice.price;
     const yieldTonnesPerHa = last.yield / 10000;
-    revenuePerHa = Math.round(yieldTonnesPerHa * avgPriceUsed);
+    revenuePerHa = Math.round(yieldTonnesPerHa * bestPrice.price);
     priceYearUsed = bestPrice.year;
     priceIsEstimate = bestPrice.isEstimate;
     priceSource = bestPrice.source;
