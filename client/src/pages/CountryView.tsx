@@ -9,8 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { TrendingUp, TrendingDown, ArrowRight, ChevronRight, Globe, Users, Briefcase, Sprout, Info, Search, ChevronDown, Download, Ship, ArrowUpDown, Trophy } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, ChevronRight, Globe, Users, Briefcase, Sprout, Info, Search, ChevronDown, Download, Ship, ArrowUpDown, Trophy, Newspaper } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useToast } from "@/hooks/use-toast";
@@ -643,15 +650,37 @@ export default function CountryView() {
                       <div className="flex items-center gap-1.5 text-xs bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 rounded px-2 py-1">
                         <Ship size={11} />
                         <span>Exports: ${crop.tradeData[tradeYear]}M ({tradeYear})</span>
-                        {crop.exportOrientation && (
+                        {crop.exportOrientation && crop.exportOrientation === 'Export-oriented' ? (
+                          <Sheet>
+                            <SheetTrigger asChild>
+                              <button 
+                                onClick={(e) => e.stopPropagation()}
+                                className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 flex items-center gap-1 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+                                title="View live market news"
+                              >
+                                <Newspaper size={9} />
+                                Export-oriented
+                              </button>
+                            </SheetTrigger>
+                            <SheetContent className="w-[400px] sm:w-[540px] border-l-border">
+                              <SheetHeader className="mb-4">
+                                <SheetTitle className="text-left flex items-center gap-2">
+                                  <Newspaper className="text-primary" size={18} />
+                                  Live Market Intel: {crop.name} Exports
+                                </SheetTitle>
+                              </SheetHeader>
+                              <div className="h-[calc(100vh-80px)] overflow-y-auto pr-1 pb-8">
+                                <NewsFeed query={`${country} ${crop.name} export`} limit={8} country={country} />
+                              </div>
+                            </SheetContent>
+                          </Sheet>
+                        ) : crop.exportOrientation ? (
                           <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                            crop.exportOrientation === 'Export-oriented'
-                              ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
-                              : crop.exportOrientation === 'Mixed market'
+                            crop.exportOrientation === 'Mixed market'
                               ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                               : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                           }`}>{crop.exportOrientation}</span>
-                        )}
+                        ) : null}
                       </div>
                     )}
 
