@@ -367,75 +367,75 @@ export default function CountryView() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-              {wb.politicalStability != null && (
+              {getLatestValue(wb.politicalStability) != null && (
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">Political Stability</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{Math.round(wb.politicalStability)}th pctl</span>
+                    <span className="font-medium tabular-nums">{Math.round(getLatestValue(wb.politicalStability)!)}th pctl</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      wb.politicalStability >= 60 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : wb.politicalStability >= 30 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      getLatestValue(wb.politicalStability)! >= 60 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : getLatestValue(wb.politicalStability)! >= 30 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                    }`}>{wb.politicalStability >= 60 ? 'LOW RISK' : wb.politicalStability >= 30 ? 'MEDIUM' : 'HIGH RISK'}</span>
+                    }`}>{getLatestValue(wb.politicalStability)! >= 60 ? 'LOW RISK' : getLatestValue(wb.politicalStability)! >= 30 ? 'MEDIUM' : 'HIGH RISK'}</span>
                   </div>
                 </div>
               )}
-              {wb.ruleOfLaw != null && (
+              {getLatestValue(wb.ruleOfLaw) != null && (
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">Rule of Law</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{Math.round(wb.ruleOfLaw)}th pctl</span>
+                    <span className="font-medium tabular-nums">{Math.round(getLatestValue(wb.ruleOfLaw)!)}th pctl</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      wb.ruleOfLaw >= 60 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : wb.ruleOfLaw >= 30 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      getLatestValue(wb.ruleOfLaw)! >= 60 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : getLatestValue(wb.ruleOfLaw)! >= 30 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                    }`}>{wb.ruleOfLaw >= 60 ? 'LOW RISK' : wb.ruleOfLaw >= 30 ? 'MEDIUM' : 'HIGH RISK'}</span>
+                    }`}>{getLatestValue(wb.ruleOfLaw)! >= 60 ? 'LOW RISK' : getLatestValue(wb.ruleOfLaw)! >= 30 ? 'MEDIUM' : 'HIGH RISK'}</span>
                   </div>
                 </div>
               )}
-              {wb.logisticsIndex != null && (
+              {getLatestValue(wb.logisticsIndex) != null && (
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">Logistics Score</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{Number(wb.logisticsIndex).toFixed(1)} / 5.0</span>
+                    <span className="font-medium tabular-nums">{Number(getLatestValue(wb.logisticsIndex)).toFixed(1)} / 5.0</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      wb.logisticsIndex >= 3.0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : wb.logisticsIndex >= 2.0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      getLatestValue(wb.logisticsIndex)! >= 3.0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : getLatestValue(wb.logisticsIndex)! >= 2.0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                    }`}>{wb.logisticsIndex >= 3.0 ? 'GOOD' : wb.logisticsIndex >= 2.0 ? 'MEDIUM' : 'POOR'}</span>
+                    }`}>{getLatestValue(wb.logisticsIndex)! >= 3.0 ? 'GOOD' : getLatestValue(wb.logisticsIndex)! >= 2.0 ? 'MEDIUM' : 'POOR'}</span>
                   </div>
                 </div>
               )}
-              {wb.irrigatedLand != null && (
+              {getLatestValue(wb.irrigatedLand) != null && (
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">Irrigated Land</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{Number(wb.irrigatedLand).toFixed(1)}%</span>
+                    <span className="font-medium tabular-nums">{Number(getLatestValue(wb.irrigatedLand)).toFixed(1)}%</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      Number(wb.irrigatedLand) >= 20 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : Number(wb.irrigatedLand) >= 5 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      Number(getLatestValue(wb.irrigatedLand)) >= 20 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : Number(getLatestValue(wb.irrigatedLand)) >= 5 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                    }`}>{Number(wb.irrigatedLand) >= 20 ? 'Irrigated' : Number(wb.irrigatedLand) >= 5 ? 'Partial' : 'Rain-dependent'}</span>
+                    }`}>{Number(getLatestValue(wb.irrigatedLand)) >= 20 ? 'Irrigated' : Number(getLatestValue(wb.irrigatedLand)) >= 5 ? 'Partial' : 'Rain-dependent'}</span>
                   </div>
                 </div>
               )}
-              {wb.agValueGrowth != null && (
+              {getLatestValue(wb.agValueGrowth) != null && (
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">Ag Sector Growth</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{Number(wb.agValueGrowth) > 0 ? '+' : ''}{Number(wb.agValueGrowth).toFixed(1)}%</span>
+                    <span className="font-medium tabular-nums">{Number(getLatestValue(wb.agValueGrowth)) > 0 ? '+' : ''}{Number(getLatestValue(wb.agValueGrowth)).toFixed(1)}%</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      Number(wb.agValueGrowth) >= 3 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : Number(wb.agValueGrowth) >= 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      Number(getLatestValue(wb.agValueGrowth)) >= 3 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : Number(getLatestValue(wb.agValueGrowth)) >= 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                    }`}>{Number(wb.agValueGrowth) >= 3 ? 'GROWING' : Number(wb.agValueGrowth) >= 0 ? 'STABLE' : 'DECLINING'}</span>
+                    }`}>{Number(getLatestValue(wb.agValueGrowth)) >= 3 ? 'GROWING' : Number(getLatestValue(wb.agValueGrowth)) >= 0 ? 'STABLE' : 'DECLINING'}</span>
                   </div>
                 </div>
               )}
-              {wb.fdiInflows != null && (
+              {getLatestValue(wb.fdiInflows) != null && (
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">FDI Inflows (% GDP)</span>
-                  <span className="font-medium tabular-nums">{Number(wb.fdiInflows).toFixed(1)}%</span>
+                  <span className="font-medium tabular-nums">{Number(getLatestValue(wb.fdiInflows)).toFixed(1)}%</span>
                 </div>
               )}
             </div>
