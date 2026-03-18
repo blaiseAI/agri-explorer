@@ -484,7 +484,7 @@ export default function CropView() {
                       <p className="text-muted-foreground">Yield</p>
                       <p className="font-medium tabular-nums">{c.latestYield.toLocaleString()}</p>
                       {c.yieldGap > 10 && (
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400">-{c.yieldGap.toFixed(0)}% gap</span>
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400">-{Number(c.yieldGap).toFixed(0)}% gap</span>
                       )}
                     </div>
                     <div>
@@ -525,7 +525,7 @@ export default function CropView() {
                   )}
                   {c.productionGrowth < -20 && (
                     <div className="flex items-center gap-1.5 text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded px-2 py-1">
-                      <span>⚠ Sharp decline ({c.productionGrowth.toFixed(0)}%). Verify with local sources.</span>
+                      <span>⚠ Sharp decline ({Number(c.productionGrowth).toFixed(0)}%). Verify with local sources.</span>
                     </div>
                   )}
                 </CardContent>

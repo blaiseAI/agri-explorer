@@ -727,7 +727,7 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
                         </span>
                       </td>
                       <td className={`px-3 py-2 tabular-nums text-xs ${e.prodGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                        {e.prodGrowth >= 0 ? "+" : ""}{e.prodGrowth.toFixed(1)}%
+                        {e.prodGrowth >= 0 ? "+" : ""}{Number(e.prodGrowth).toFixed(1)}%
                       </td>
                       <td className="px-3 py-2 tabular-nums text-xs">
                         {e.exportValue != null ? `$${e.exportValue}M` : "—"}
@@ -736,7 +736,7 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
                         {e.politicalStability != null ? `${Math.round(e.politicalStability)}th` : "—"}
                       </td>
                       <td className={`px-3 py-2 tabular-nums text-xs ${logisticsColor(e.logisticsIndex)}`}>
-                        {e.logisticsIndex != null ? e.logisticsIndex.toFixed(1) : "—"}
+                        {e.logisticsIndex != null ? Number(e.logisticsIndex).toFixed(1) : "—"}
                       </td>
                     </tr>
                   );

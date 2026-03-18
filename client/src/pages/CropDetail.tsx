@@ -495,7 +495,7 @@ export default function CropDetail() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Logistics Score</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{data.riskFactors.logisticsIndex.toFixed(1)} / 5.0</span>
+                    <span className="font-medium tabular-nums">{Number(data.riskFactors.logisticsIndex).toFixed(1)} / 5.0</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
                       data.riskFactors.logisticsIndex >= 3.0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                       : data.riskFactors.logisticsIndex >= 2.0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
@@ -508,7 +508,7 @@ export default function CropDetail() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Climate Exposure</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{data.riskFactors.climateExposure.toFixed(0)}% pop.</span>
+                    <span className="font-medium tabular-nums">{Number(data.riskFactors.climateExposure).toFixed(0)}% pop.</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
                       data.riskFactors.climateExposure <= 10 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                       : data.riskFactors.climateExposure <= 40 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
@@ -521,7 +521,7 @@ export default function CropDetail() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Irrigated Land</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{data.riskFactors.irrigatedLand.toFixed(1)}%</span>
+                    <span className="font-medium tabular-nums">{Number(data.riskFactors.irrigatedLand).toFixed(1)}%</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
                       data.riskFactors.irrigatedLand >= 20 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                       : data.riskFactors.irrigatedLand >= 5 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
@@ -600,7 +600,7 @@ export default function CropDetail() {
                         </span>
                       )}
                       <span className={op.prodGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
-                        {op.prodGrowth >= 0 ? "+" : ""}{op.prodGrowth.toFixed(1)}% growth
+                        {op.prodGrowth >= 0 ? "+" : ""}{Number(op.prodGrowth).toFixed(1)}% growth
                       </span>
                     </div>
                     <p className="text-[11px] text-muted-foreground">{op.reason}</p>
