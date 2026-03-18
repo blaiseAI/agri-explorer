@@ -37,6 +37,7 @@ import {
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useMonetization } from "@/hooks/useMonetization";
 import { downloadCSV } from "@/lib/export";
+import NewsFeed from "@/components/NewsFeed";
 
 const INSIGHT_ICONS: Record<string, any> = {
   opportunity: Target,
@@ -232,8 +233,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Two column: Countries + Crops */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Three column: Countries + Crops + News */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Countries */}
         <Card>
           <CardHeader className="pb-3">
@@ -387,6 +388,11 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Global News Feed */}
+        <div className="lg:col-span-1">
+          <NewsFeed query="Africa agriculture investment" limit={6} country="Africa" />
+        </div>
       </div>
 
       {/* Top Insights */}
@@ -409,17 +415,6 @@ export default function Dashboard() {
                         <Icon size={11} className="mr-1" />
                         {insight.type.replace("_", " ")}
                       </Badge>
-                      <span className="text-xs font-medium text-primary tabular-nums flex items-center gap-1">
-                        {insight.score}/100
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info size={10} className="opacity-40 hover:opacity-100 cursor-help transition-opacity" />
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-[240px] text-xs">
-                            Composite signal score based on growth rate, production scale, governance indicators, and trade momentum. Higher = stronger signal.
-                          </TooltipContent>
-                        </Tooltip>
-                      </span>
                     </div>
                     <p className="text-sm font-medium leading-snug">{insight.title}</p>
                     <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
@@ -685,22 +680,26 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
                 {visible.map((e: any) => {
                   const Icon = INSIGHT_ICONS[e.signalType] || Lightbulb;
                   return (
-                    <Link key={`${e.country}-${e.crop}`} href={`/explore/${e.country}/${e.crop}`}>
-                      <tr className="border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors">
-                        <td className="px-3 py-2 text-xs text-muted-foreground tabular-nums">{e.rank}</td>
-                        <td className="px-3 py-2">
-                          <span className="font-medium text-sm">{e.country}</span>
-                          <span className="text-muted-foreground mx-1.5">·</span>
-                          <span className="text-sm">{e.crop}</span>
-                          <span className="text-[11px] text-muted-foreground ml-1.5">{e.region}</span>
-                        </td>
-                        <td className="px-3 py-2">
-                          <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${INSIGHT_COLORS[e.signalType] || ""}`}>
-                            <Icon size={9} className="mr-0.5" />
-                            {e.signalType.replace("_", " ")}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-2 tabular-nums text-xs font-medium flex items-center gap-1">
+                    <tr
+                      key={`${e.country}-${e.crop}`}
+                      className="border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => window.location.hash = `/explore/${e.country}/${e.crop}`}
+                    >
+                      <td className="px-3 py-2 text-xs text-muted-foreground tabular-nums">{e.rank}</td>
+                      <td className="px-3 py-2">
+                        <span className="font-medium text-sm">{e.country}</span>
+                        <span className="text-muted-foreground mx-1.5">·</span>
+                        <span className="text-sm">{e.crop}</span>
+                        <span className="text-[11px] text-muted-foreground ml-1.5">{e.region}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${INSIGHT_COLORS[e.signalType] || ""}`}>
+                          <Icon size={9} className="mr-0.5" />
+                          {e.signalType.replace("_", " ")}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 tabular-nums text-xs font-medium">
+                        <span className="inline-flex items-center gap-1">
                           {e.score}
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -710,24 +709,36 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
                               Composite score: production growth, revenue/ha, yield gap vs Africa avg, and export market strength.
                             </TooltipContent>
                           </Tooltip>
-                        </td>
-                        <td className="px-3 py-2 tabular-nums text-xs">
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 tabular-nums text-xs">
+                        <span className="inline-flex items-center gap-1">
                           {e.revenuePerHa != null ? `$${e.revenuePerHa.toLocaleString()}` : "—"}
-                        </td>
-                        <td className={`px-3 py-2 tabular-nums text-xs ${e.prodGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                          {e.prodGrowth >= 0 ? "+" : ""}{e.prodGrowth.toFixed(1)}%
-                        </td>
-                        <td className="px-3 py-2 tabular-nums text-xs">
-                          {e.exportValue != null ? `$${e.exportValue}M` : "—"}
-                        </td>
-                        <td className={`px-3 py-2 tabular-nums text-xs ${stabilityColor(e.politicalStability)}`}>
-                          {e.politicalStability != null ? `${Math.round(e.politicalStability)}th` : "—"}
-                        </td>
-                        <td className={`px-3 py-2 tabular-nums text-xs ${logisticsColor(e.logisticsIndex)}`}>
-                          {e.logisticsIndex != null ? e.logisticsIndex.toFixed(1) : "—"}
-                        </td>
-                      </tr>
-                    </Link>
+                          {e.revenuePerHa != null && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info size={9} className="opacity-30 hover:opacity-100 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[240px] text-xs">
+                                Revenue per hectare = latest yield (t/ha) × producer price ($/t). Price from FAOSTAT when available; regional average otherwise. Outlier yields and estimated prices are capped for reliability.
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </span>
+                      </td>
+                      <td className={`px-3 py-2 tabular-nums text-xs ${e.prodGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        {e.prodGrowth >= 0 ? "+" : ""}{e.prodGrowth.toFixed(1)}%
+                      </td>
+                      <td className="px-3 py-2 tabular-nums text-xs">
+                        {e.exportValue != null ? `$${e.exportValue}M` : "—"}
+                      </td>
+                      <td className={`px-3 py-2 tabular-nums text-xs ${stabilityColor(e.politicalStability)}`}>
+                        {e.politicalStability != null ? `${Math.round(e.politicalStability)}th` : "—"}
+                      </td>
+                      <td className={`px-3 py-2 tabular-nums text-xs ${logisticsColor(e.logisticsIndex)}`}>
+                        {e.logisticsIndex != null ? e.logisticsIndex.toFixed(1) : "—"}
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
