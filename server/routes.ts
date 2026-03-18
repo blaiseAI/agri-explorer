@@ -2,6 +2,11 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices, getBestPrice } from "./data";
 import { generateInsights, generateDiverseInsights, generateLeaderboard, generateTopCrops, generateSimilarOpportunities } from "./insights";
+import Parser from "rss-parser";
+
+const parser = new Parser();
+const newsCache = new Map<string, { timestamp: number; data: any[] }>();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 export async function registerRoutes(
   httpServer: Server,
@@ -336,6 +341,44 @@ export async function registerRoutes(
       latestYear,
     });
   });
+
+  // Get RSS News
+  app.get("/api/news/:query", async (req, res) => {
+    try {
+      const { query } = req.params;
+      const now = Date.now();
+
+      // Check cache
+      const cached = newsCache.get(query);
+      if (cached && (now - cached.timestamp < CACHE_TTL)) {
+        return res.json(cached.data);
+      }
+
+      // Fetch from Google News
+      const feed = await parser.parseURL(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`);
+      
+      const articles = feed.items.slice(0, 5).map(item => ({
+        title: item.title,
+        link: item.link,
+        source: item.source || item.creator || extractSourceFromTitle(item.title) || 'News',
+        pubDate: item.pubDate,
+      }));
+
+      // Update cache
+      newsCache.set(query, { timestamp: now, data: articles });
+      res.json(articles);
+    } catch (error) {
+      console.error("RSS fetch error:", error);
+      res.status(500).json([]); // Graceful fallback
+    }
+  });
+
+  // Helper for when source isn't explicitly provided by Google News format
+  function extractSourceFromTitle(title?: string) {
+    if (!title) return null;
+    const parts = title.split(' - ');
+    return parts.length > 1 ? parts[parts.length - 1] : null;
+  }
 
   return httpServer;
 }
