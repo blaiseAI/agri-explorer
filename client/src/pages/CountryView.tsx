@@ -15,6 +15,7 @@ import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { useToast } from "@/hooks/use-toast";
 import { useMonetization } from "@/hooks/useMonetization";
+import NewsFeed from "@/components/NewsFeed";
 
 const FLAG_MAP: Record<string, string> = {
   UGA: "🇺🇬", KEN: "🇰🇪", RWA: "🇷🇼", NGA: "🇳🇬", GHA: "🇬🇭", TZA: "🇹🇿",
@@ -516,14 +517,16 @@ export default function CountryView() {
         </Card>
       )}
 
-      {/* Top Crops for Investment */}
-      {topCrops && topCrops.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-medium flex items-center gap-2">
-            <Trophy size={15} className="text-primary" />
-            Top Crops for Investment
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* Top Crops for Investment & News */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="xl:col-span-3 space-y-3">
+          {topCrops && topCrops.length > 0 && (
+            <>
+              <h2 className="text-sm font-medium flex items-center gap-2">
+                <Trophy size={15} className="text-primary" />
+                Top Crops for Investment
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {topCrops.map((tc: any, i: number) => {
               const medals = ["🥇", "🥈", "🥉"];
               const medalColors = [
@@ -560,9 +563,15 @@ export default function CountryView() {
                 </Link>
               );
             })}
-          </div>
+              </div>
+            </>
+          )}
         </div>
-      )}
+        
+        <div className="xl:col-span-1">
+          <NewsFeed query={`${country} agriculture investment`} limit={4} country={country} />
+        </div>
+      </div>
 
       {/* Crop cards */}
       <div className="space-y-3">
