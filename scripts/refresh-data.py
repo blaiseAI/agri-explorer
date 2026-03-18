@@ -16,6 +16,7 @@ import os
 import sys
 import time
 import zipfile
+import sqlite3
 from datetime import datetime, timezone
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
@@ -217,6 +218,50 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 DATA_DIR = os.path.join(PROJECT_DIR, "server", "data")
 OUTPUT_FILE = os.path.join(DATA_DIR, "live-data.json")
+DB_FILE = os.path.join(DATA_DIR, "agriscope.db")
+
+DB_SCHEMA = """
+CREATE TABLE metadata (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
+CREATE TABLE global_avg_yields (
+    crop TEXT PRIMARY KEY,
+    yield_hg_ha REAL
+);
+CREATE TABLE crop_metrics (
+    country TEXT,
+    crop TEXT,
+    element TEXT,
+    year INTEGER,
+    value REAL,
+    PRIMARY KEY (country, crop, element, year)
+);
+CREATE TABLE trade_metrics (
+    country TEXT,
+    crop TEXT,
+    element TEXT,
+    year INTEGER,
+    value_usd_millions REAL,
+    PRIMARY KEY (country, crop, element, year)
+);
+CREATE TABLE price_metrics (
+    country TEXT,
+    crop TEXT,
+    source TEXT,
+    year INTEGER,
+    price_usd_tonne REAL,
+    is_proxy INTEGER DEFAULT 0,
+    PRIMARY KEY (country, crop, source, year)
+);
+CREATE TABLE world_bank_metrics (
+    country TEXT,
+    indicator TEXT,
+    year INTEGER,
+    value REAL,
+    PRIMARY KEY (country, indicator, year)
+);
+"""
 
 # ──────────────────── Helpers ────────────────────
 
@@ -1240,15 +1285,91 @@ def main():
         print("  ⚠️ Using previous WFP prices data (fetch failed)")
     
     os.makedirs(DATA_DIR, exist_ok=True)
-    tmp_file = OUTPUT_FILE + ".tmp"
-    with open(tmp_file, "w") as f:
-        json.dump(output, f)  # No indent to save space
-    os.replace(tmp_file, OUTPUT_FILE)
+    tmp_db = DB_FILE + ".tmp"
+    if os.path.exists(tmp_db):
+        os.remove(tmp_db)
     
-    file_size = os.path.getsize(OUTPUT_FILE)
+    conn = sqlite3.connect(tmp_db)
+    cur = conn.cursor()
+    cur.executescript(DB_SCHEMA)
+
+    # Insert metadata
+    cur.execute("INSERT INTO metadata (key, value) VALUES (?, ?)", ("lastUpdated", output["metadata"]["lastUpdated"]))
+    cur.execute("INSERT INTO metadata (key, value) VALUES (?, ?)", ("sources", json.dumps(output["metadata"]["sources"])))
+    cur.execute("INSERT INTO metadata (key, value) VALUES (?, ?)", ("countries", json.dumps(output["metadata"]["countries"])))
+    cur.execute("INSERT INTO metadata (key, value) VALUES (?, ?)", ("crops", json.dumps(output["metadata"]["crops"])))
+    cur.execute("INSERT INTO metadata (key, value) VALUES (?, ?)", ("years", json.dumps(output["metadata"]["years"])))
+    cur.execute("INSERT INTO metadata (key, value) VALUES (?, ?)", ("errors", json.dumps(output["metadata"]["errors"])))
+
+    # Insert crop_data
+    if "cropData" in output:
+        for country, crops in output["cropData"].items():
+            for crop, elements in crops.items():
+                for element, years in elements.items():
+                    for year, val in years.items():
+                        cur.execute("INSERT INTO crop_metrics (country, crop, element, year, value) VALUES (?, ?, ?, ?, ?)",
+                                    (country, crop, element, int(year), val))
+
+    # Insert tradeData
+    if "tradeData" in output:
+        for country, crops in output["tradeData"].items():
+            for crop, years in crops.items():
+                for year, val in years.items():
+                    cur.execute("INSERT INTO trade_metrics (country, crop, element, year, value_usd_millions) VALUES (?, ?, ?, ?, ?)",
+                                (country, crop, "export", int(year), val))
+
+    if "importData" in output:
+        for country, crops in output["importData"].items():
+            for crop, years in crops.items():
+                for year, val in years.items():
+                    cur.execute("INSERT INTO trade_metrics (country, crop, element, year, value_usd_millions) VALUES (?, ?, ?, ?, ?)",
+                                (country, crop, "import", int(year), val))
+
+    # Insert price_metrics
+    if "producerPrices" in output:
+        for country, crops in output["producerPrices"].items():
+            for crop, years in crops.items():
+                for year, val in years.items():
+                    cur.execute("INSERT INTO price_metrics (country, crop, source, year, price_usd_tonne) VALUES (?, ?, ?, ?, ?)",
+                                (country, crop, "faostat", int(year), val))
+
+    if "wfpPrices" in output:
+        flags = output.get("wfpProxyFlags", {})
+        for country, crops in output["wfpPrices"].items():
+            for crop, years in crops.items():
+                is_proxy = 1 if flags.get(country, {}).get(crop) else 0
+                for year, val in years.items():
+                    cur.execute("INSERT INTO price_metrics (country, crop, source, year, price_usd_tonne, is_proxy) VALUES (?, ?, ?, ?, ?, ?)",
+                                (country, crop, "wfp", int(year), val, is_proxy))
+
+    if "priceEstimates" in output:
+        for country, crops in output["priceEstimates"].items():
+            for crop, estimate in crops.items():
+                cur.execute("INSERT INTO price_metrics (country, crop, source, year, price_usd_tonne, is_proxy) VALUES (?, ?, ?, ?, ?, ?)",
+                            (country, crop, estimate["source"], int(estimate["year"]), estimate["price"], 1))
+
+    # Insert world_bank_metrics
+    if "worldBankData" in output:
+        for country, indicators in output["worldBankData"].items():
+            for indicator, years in indicators.items():
+                for year, val in years.items():
+                    cur.execute("INSERT INTO world_bank_metrics (country, indicator, year, value) VALUES (?, ?, ?, ?)",
+                                (country, indicator, int(year), val))
+
+    # Insert global_avg_yields
+    if "globalAvgYields" in output:
+        for crop, yield_val in output["globalAvgYields"].items():
+            cur.execute("INSERT INTO global_avg_yields (crop, yield_hg_ha) VALUES (?, ?)", (crop, yield_val))
+
+    conn.commit()
+    conn.close()
+
+    os.replace(tmp_db, DB_FILE)
+    
+    file_size = os.path.getsize(DB_FILE)
     print(f"\n{'=' * 60}")
-    print(f"✅ {OUTPUT_FILE}")
-    print(f"   Size: {file_size/1024:.0f} KB")
+    print(f"✅ {DB_FILE}")
+    print(f"   Size: {file_size/1024/1024:.1f} MB")
     print(f"   Countries: {len(countries_list)}")
     print(f"   Crops: {len(crops_list)}")
     print(f"   Years: {available_years[0] if available_years else '?'}–{available_years[-1] if available_years else '?'}")
