@@ -1,4 +1,4 @@
-import { getCropData, getTradeData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getBestPrice, getYears } from "./data";
+import { getCropData, getTradeData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getBestPrice, getProducerPrices, getYears } from "./data";
 
 export interface Insight {
   id: string;
@@ -45,7 +45,7 @@ export function generateInsights(country?: string, crop?: string): Insight[] {
     countryLookup[c.name] = c.region;
   }
 
-  const countryList = country ? [country] : COUNTRIES.map(c => c.name);
+  const countryList = country ? [country] : COUNTRIES.map((c: { name: string }) => c.name);
   const cropList = crop ? [crop] : [...CROPS];
 
   for (const c of countryList) {
@@ -329,7 +329,7 @@ export function generateLeaderboard(): LeaderboardEntry[] {
   const CROP_DATA = getCropData();
   const TRADE_DATA = getTradeData();
   const WORLD_BANK_DATA = getWorldBankData();
-  const YEARS = getYears();
+  const GLOBAL_AVG_YIELDS = getGlobalAvgYields();
   const COUNTRIES = getCountries();
 
   const regionMap: Record<string, string> = {};
@@ -342,19 +342,44 @@ export function generateLeaderboard(): LeaderboardEntry[] {
     !GENERIC_CROPS.includes(ins.crop)
   );
 
-  // Deduplicate by country+crop — keep highest score
-  const bestByPair = new Map<string, typeof filtered[0]>();
+  // Deduplicate by country+crop+type — keep highest score per type per pair
+  // This preserves all signal types through the pipeline
+  const bestByKey = new Map<string, typeof filtered[0]>();
   for (const ins of filtered) {
-    const key = `${ins.country}|${ins.crop}`;
-    const existing = bestByPair.get(key);
+    const key = `${ins.country}|${ins.crop}|${ins.type}`;
+    const existing = bestByKey.get(key);
     if (!existing || ins.score > existing.score) {
-      bestByPair.set(key, ins);
+      bestByKey.set(key, ins);
     }
   }
 
-  // Enrich with revenue/ha, exports, risk
-  const entries: LeaderboardEntry[] = [];
-  for (const ins of Array.from(bestByPair.values())) {
+  // Build global median price per crop (for capping estimated-price outliers)
+  const PRODUCER_PRICES = getProducerPrices();
+  const currentYear = new Date().getFullYear();
+  const staleThreshold = currentYear - 5;
+  const globalMedianPrices: Record<string, number> = {};
+  {
+    const cropPriceArrays: Record<string, number[]> = {};
+    for (const [, countryCrops] of Object.entries(PRODUCER_PRICES)) {
+      for (const [cropName, priceData] of Object.entries(countryCrops)) {
+        const years = Object.keys(priceData).sort();
+        const latest = years[years.length - 1];
+        if (parseInt(latest) >= staleThreshold) {
+          if (!cropPriceArrays[cropName]) cropPriceArrays[cropName] = [];
+          cropPriceArrays[cropName].push(priceData[latest]);
+        }
+      }
+    }
+    for (const [cropName, prices] of Object.entries(cropPriceArrays)) {
+      if (prices.length >= 3) {
+        prices.sort((a, b) => a - b);
+        globalMedianPrices[cropName] = prices[Math.floor(prices.length / 2)];
+      }
+    }
+  }
+
+  // Enrich all entries with revenue/ha, exports, risk, yield gap
+  const enrichEntry = (ins: typeof filtered[0]): LeaderboardEntry & { _yieldGap: number } => {
     const country = ins.country;
     const crop = ins.crop!;
 
@@ -364,9 +389,23 @@ export function generateLeaderboard(): LeaderboardEntry[] {
     const cropData = CROP_DATA[country]?.[crop];
     if (bestPrice && cropData) {
       const yieldYears = Object.keys(cropData.yield).sort();
-      const latestYield = cropData.yield[yieldYears[yieldYears.length - 1]] || 0;
+      let latestYield = cropData.yield[yieldYears[yieldYears.length - 1]] || 0;
+      // Yield sanity check: cap at 2.5× global average to prevent data artifacts
+      // (e.g., Malawi Mangoes 37.9 t/ha vs 5–15 t/ha typical — underreported area)
+      const globalAvgForCap = GLOBAL_AVG_YIELDS[crop];
+      if (globalAvgForCap && latestYield > globalAvgForCap * 2.5) {
+        latestYield = Math.round(globalAvgForCap * 2.5);
+      }
+      // Estimated-price sanity check: cap at 3× global median to prevent
+      // regional averages inflated by outlier countries
+      // (e.g., Angola Tomatoes $3,701/t from "Central Africa avg" estimate)
+      let price = bestPrice.price;
+      const medianPrice = globalMedianPrices[crop];
+      if (bestPrice.isEstimate && medianPrice && price > medianPrice * 3) {
+        price = Math.round(medianPrice * 3);
+      }
       if (latestYield > 0) {
-        revenuePerHa = Math.round((latestYield / 10000) * bestPrice.price);
+        revenuePerHa = Math.round((latestYield / 10000) * price);
       }
     }
 
@@ -386,31 +425,112 @@ export function generateLeaderboard(): LeaderboardEntry[] {
     // Production growth
     let prodGrowth = ins.metrics?.prodCAGR ?? 0;
     if (prodGrowth === 0 && cropData) {
-      // Compute if not in metrics (yield_gap and trade types don't always have it)
       const prodValues = Object.entries(cropData.production).sort((a, b) => a[0].localeCompare(b[0]));
       if (prodValues.length >= 2) {
         prodGrowth = +calcCAGR(prodValues[0][1], prodValues[prodValues.length - 1][1], prodValues.length - 1).toFixed(1);
       }
     }
 
-    entries.push({
-      rank: 0, // set after sort
+    // Yield gap
+    let yieldGap = 0;
+    if (cropData) {
+      const yieldYears2 = Object.keys(cropData.yield).sort();
+      const latestYield2 = cropData.yield[yieldYears2[yieldYears2.length - 1]] || 0;
+      const globalAvg = GLOBAL_AVG_YIELDS[crop];
+      if (globalAvg && latestYield2 > 0) {
+        yieldGap = Math.max(0, calcYieldGap(latestYield2, globalAvg));
+      }
+    }
+
+    return {
+      rank: 0,
       country,
       region: ins.region || regionMap[country] || '',
       crop,
       signalType: ins.type,
-      score: ins.score,
+      score: 0, // computed below
       revenuePerHa,
       prodGrowth,
       exportValue,
       politicalStability,
       logisticsIndex,
+      _yieldGap: yieldGap,
+    };
+  };
+
+  const entries = Array.from(bestByKey.values()).map(enrichEntry);
+
+  // ── Percentile-rank composite scoring ──
+  const pctlRank = (arr: number[]) => {
+    const sorted = [...arr].sort((a, b) => a - b);
+    return arr.map(v => {
+      const idx = sorted.indexOf(v);
+      return Math.round((idx / Math.max(1, sorted.length - 1)) * 100);
     });
+  };
+
+  const growthPctls = pctlRank(entries.map(e => e.prodGrowth));
+  const revPctls = pctlRank(entries.map(e => e.revenuePerHa ?? 0));
+  const exportPctls = pctlRank(entries.map(e => e.exportValue ?? 0));
+  const gapPctls = pctlRank(entries.map(e => (e as any)._yieldGap ?? 0));
+  const stabPctls = pctlRank(entries.map(e => e.politicalStability ?? 0));
+  const logPctls = pctlRank(entries.map(e => e.logisticsIndex ?? 0));
+
+  for (let i = 0; i < entries.length; i++) {
+    entries[i].score = Math.round(
+      0.25 * growthPctls[i] +
+      0.20 * revPctls[i] +
+      0.20 * exportPctls[i] +
+      0.20 * gapPctls[i] +
+      0.08 * stabPctls[i] +
+      0.07 * logPctls[i]
+    );
+    delete (entries[i] as any)._yieldGap;
   }
 
-  // Sort by score desc, assign ranks, return top 100
+  // Sort by score desc
   entries.sort((a, b) => b.score - a.score);
-  return entries.slice(0, 100).map((e, i) => ({ ...e, rank: i + 1 }));
+
+  // ── Assemble final list with diversity guarantees ──
+  const LIMIT = 100;
+  const MIN_PER_TYPE = 10;
+  const MAX_COUNTRY = 3;
+  const usedPairs = new Set<string>(); // country+crop dedup in output
+  const countryCounts: Record<string, number> = {};
+  const typeCounts2: Record<string, number> = {};
+  const result: LeaderboardEntry[] = [];
+
+  // First pass: fill by score, respecting country cap + country+crop uniqueness
+  for (const e of entries) {
+    if (result.length >= LIMIT - MIN_PER_TYPE) break; // reserve slots for diversity
+    const pairKey = `${e.country}|${e.crop}`;
+    if (usedPairs.has(pairKey)) continue;
+    countryCounts[e.country] = (countryCounts[e.country] || 0) + 1;
+    if (countryCounts[e.country] > MAX_COUNTRY) continue;
+    usedPairs.add(pairKey);
+    typeCounts2[e.signalType] = (typeCounts2[e.signalType] || 0) + 1;
+    result.push(e);
+  }
+
+  // Second pass: fill reserved slots for underrepresented types (new country+crop pairs only)
+  for (const signalType of ['yield_gap', 'trade', 'growth', 'opportunity']) {
+    const existing = typeCounts2[signalType] || 0;
+    if (existing >= MIN_PER_TYPE) continue;
+    const needed = MIN_PER_TYPE - existing;
+    let added = 0;
+    for (const e of entries) {
+      if (added >= needed) break;
+      const pairKey = `${e.country}|${e.crop}`;
+      if (e.signalType !== signalType || usedPairs.has(pairKey)) continue;
+      usedPairs.add(pairKey);
+      result.push(e);
+      added++;
+    }
+  }
+
+  // Sort final result by score, assign ranks
+  result.sort((a, b) => b.score - a.score);
+  return result.slice(0, LIMIT).map((e, i) => ({ ...e, rank: i + 1 }));
 }
 
 // ===== TOP CROPS FOR INVESTMENT =====
@@ -448,15 +568,40 @@ export function generateTopCrops(country: string): TopCrop[] {
     const prodValues = Object.entries(data.production).sort((a, b) => a[0].localeCompare(b[0]));
     if (prodValues.length < 2) continue;
     const lastProd = prodValues[prodValues.length - 1][1];
-    if (lastProd < 1) continue; // skip negligible production
+    if (lastProd < 5) continue; // skip negligible production (avoids misleading growth from near-zero base)
 
     // Revenue/ha
     let revenuePerHa: number | null = null;
     const bestPrice = getBestPrice(country, cropName);
     const yieldValues = Object.entries(data.yield).sort((a, b) => a[0].localeCompare(b[0]));
-    const latestYield = yieldValues.length > 0 ? yieldValues[yieldValues.length - 1][1] : 0;
+    let latestYield = yieldValues.length > 0 ? yieldValues[yieldValues.length - 1][1] : 0;
+    // Yield sanity check: cap at 2.5× global average
+    const globalAvgForYieldCap = GLOBAL_AVG_YIELDS[cropName];
+    if (globalAvgForYieldCap && latestYield > globalAvgForYieldCap * 2.5) {
+      latestYield = Math.round(globalAvgForYieldCap * 2.5);
+    }
     if (bestPrice && latestYield > 0) {
-      revenuePerHa = Math.round((latestYield / 10000) * bestPrice.price);
+      // Estimated-price sanity check: cap at 3× global median
+      let price = bestPrice.price;
+      const PRODUCER_PRICES = getProducerPrices();
+      const curYear = new Date().getFullYear();
+      const staleThresh = curYear - 5;
+      if (bestPrice.isEstimate) {
+        const cropPrices: number[] = [];
+        for (const [, cc] of Object.entries(PRODUCER_PRICES)) {
+          const pd = cc[cropName];
+          if (!pd) continue;
+          const yrs = Object.keys(pd).sort();
+          const lt = yrs[yrs.length - 1];
+          if (parseInt(lt) >= staleThresh) cropPrices.push(pd[lt]);
+        }
+        if (cropPrices.length >= 3) {
+          cropPrices.sort((a, b) => a - b);
+          const median = cropPrices[Math.floor(cropPrices.length / 2)];
+          if (price > median * 3) price = Math.round(median * 3);
+        }
+      }
+      revenuePerHa = Math.round((latestYield / 10000) * price);
     }
 
     // Production growth
@@ -484,7 +629,9 @@ export function generateTopCrops(country: string): TopCrop[] {
 
   if (raw.length === 0) return [];
 
-  // Normalize each metric to 0-100 (max-scaling)
+  // Log-dampened normalization: prevents single outlier from compressing all other scores
+  const logNorm = (v: number, max: number) => max > 0 ? (Math.log(1 + v) / Math.log(1 + max)) * 100 : 0;
+
   const maxRev = Math.max(...raw.map(r => r.revenuePerHa ?? 0), 1);
   const maxGrowth = Math.max(...raw.map(r => Math.max(0, r.prodGrowth)), 1);
   const maxGap = Math.max(...raw.map(r => Math.max(0, r.yieldGap ?? 0)), 1);
@@ -493,29 +640,41 @@ export function generateTopCrops(country: string): TopCrop[] {
   const topQuartileThreshold = revQuartile[Math.floor(revQuartile.length * 0.75)];
 
   const scored = raw.map(r => {
-    const revScore = ((r.revenuePerHa ?? 0) / maxRev) * 100;
+    const revScore = logNorm(r.revenuePerHa ?? 0, maxRev);
     const growthScore = (Math.max(0, r.prodGrowth) / maxGrowth) * 100;
     const gapScore = (Math.max(0, r.yieldGap ?? 0) / maxGap) * 100;
-    const exportScore = ((r.exportValue ?? 0) / maxExport) * 100;
-    const fitScore = Math.round(0.3 * revScore + 0.3 * growthScore + 0.2 * gapScore + 0.2 * exportScore);
+    const exportScore = logNorm(r.exportValue ?? 0, maxExport);
+    const fitScore = Math.round(0.25 * revScore + 0.25 * growthScore + 0.25 * gapScore + 0.25 * exportScore);
 
-    // Reason decision tree
+    return { ...r, fitScore, reason: '' };
+  });
+
+  scored.sort((a, b) => b.fitScore - a.fitScore);
+  const top3 = scored.slice(0, 3);
+
+  // Assign reasons AFTER selecting top 3, so comparisons are relative to finalists
+  const top3MaxExport = Math.max(...top3.map(r => r.exportValue ?? 0), 1);
+
+  for (const r of top3) {
+    const isTopExporter = (r.exportValue ?? 0) >= top3MaxExport * 0.7 && top3MaxExport > 50;
     let reason = 'Consistent performer';
     if ((r.exportValue ?? 0) > 10 && r.prodGrowth > 50) {
       reason = 'Strong export growth + rising production';
+    } else if (isTopExporter) {
+      reason = `Strong export market — $${Math.round(r.exportValue!)}M`;
     } else if ((r.yieldGap ?? 0) > 30 && (r.revenuePerHa ?? 0) > 500) {
       reason = 'Large yield gap — high upside potential';
     } else if ((r.revenuePerHa ?? 0) >= topQuartileThreshold && topQuartileThreshold > 0) {
       reason = 'High value crop for this region';
     } else if (r.prodGrowth > 100) {
       reason = 'Rapidly expanding production';
+    } else if ((r.exportValue ?? 0) > 10) {
+      reason = `Established export crop — $${Math.round(r.exportValue!)}M`;
     }
+    r.reason = reason;
+  }
 
-    return { ...r, fitScore, reason };
-  });
-
-  scored.sort((a, b) => b.fitScore - a.fitScore);
-  return scored.slice(0, 3);
+  return top3;
 }
 
 // ===== SIMILAR OPPORTUNITIES =====

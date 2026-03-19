@@ -63,6 +63,13 @@ const INSIGHT_CONFIG: Record<string, { badge: string; bg: string; icon: any; acc
   },
 };
 
+function getLatestValue(obj: Record<string, number> | undefined): number | null {
+  if (!obj) return null;
+  const keys = Object.keys(obj).sort();
+  if (keys.length === 0) return null;
+  return obj[keys[keys.length - 1]];
+}
+
 export default function CropDetail() {
   const params = useParams<{ country: string; crop: string }>();
   const country = params.country || "Nigeria";
@@ -478,55 +485,55 @@ export default function CropDetail() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3 text-xs">
-              {data.riskFactors.politicalStability != null && (
+              {getLatestValue(data.riskFactors.politicalStability) != null && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Political Stability</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{Math.round(data.riskFactors.politicalStability)}th pctl</span>
+                    <span className="font-medium tabular-nums">{Math.round(getLatestValue(data.riskFactors.politicalStability)!)}th pctl</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      data.riskFactors.politicalStability >= 60 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : data.riskFactors.politicalStability >= 30 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      getLatestValue(data.riskFactors.politicalStability)! >= 60 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : getLatestValue(data.riskFactors.politicalStability)! >= 30 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                    }`}>{data.riskFactors.politicalStability >= 60 ? 'LOW RISK' : data.riskFactors.politicalStability >= 30 ? 'MEDIUM' : 'HIGH RISK'}</span>
+                    }`}>{getLatestValue(data.riskFactors.politicalStability)! >= 60 ? 'LOW RISK' : getLatestValue(data.riskFactors.politicalStability)! >= 30 ? 'MEDIUM' : 'HIGH RISK'}</span>
                   </div>
                 </div>
               )}
-              {data.riskFactors.logisticsIndex != null && (
+              {getLatestValue(data.riskFactors.logisticsIndex) != null && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Logistics Score</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{Number(data.riskFactors.logisticsIndex).toFixed(1)} / 5.0</span>
+                    <span className="font-medium tabular-nums">{Number(getLatestValue(data.riskFactors.logisticsIndex)).toFixed(1)} / 5.0</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      data.riskFactors.logisticsIndex >= 3.0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : data.riskFactors.logisticsIndex >= 2.0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      getLatestValue(data.riskFactors.logisticsIndex)! >= 3.0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : getLatestValue(data.riskFactors.logisticsIndex)! >= 2.0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                    }`}>{data.riskFactors.logisticsIndex >= 3.0 ? 'GOOD' : data.riskFactors.logisticsIndex >= 2.0 ? 'MEDIUM' : 'POOR'}</span>
+                    }`}>{getLatestValue(data.riskFactors.logisticsIndex)! >= 3.0 ? 'GOOD' : getLatestValue(data.riskFactors.logisticsIndex)! >= 2.0 ? 'MEDIUM' : 'POOR'}</span>
                   </div>
                 </div>
               )}
-              {data.riskFactors.climateExposure != null && (
+              {getLatestValue(data.riskFactors.climateExposure) != null && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Climate Exposure</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{Number(data.riskFactors.climateExposure).toFixed(0)}% pop.</span>
+                    <span className="font-medium tabular-nums">{Number(getLatestValue(data.riskFactors.climateExposure)).toFixed(0)}% pop.</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      data.riskFactors.climateExposure <= 10 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : data.riskFactors.climateExposure <= 40 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      getLatestValue(data.riskFactors.climateExposure)! <= 10 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : getLatestValue(data.riskFactors.climateExposure)! <= 40 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                    }`}>{data.riskFactors.climateExposure <= 10 ? 'LOW' : data.riskFactors.climateExposure <= 40 ? 'MEDIUM' : 'HIGH'}</span>
+                    }`}>{getLatestValue(data.riskFactors.climateExposure)! <= 10 ? 'LOW' : getLatestValue(data.riskFactors.climateExposure)! <= 40 ? 'MEDIUM' : 'HIGH'}</span>
                   </div>
                 </div>
               )}
-              {data.riskFactors.irrigatedLand != null && (
+              {getLatestValue(data.riskFactors.irrigatedLand) != null && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Irrigated Land</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium tabular-nums">{Number(data.riskFactors.irrigatedLand).toFixed(1)}%</span>
+                    <span className="font-medium tabular-nums">{Number(getLatestValue(data.riskFactors.irrigatedLand)).toFixed(1)}%</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      data.riskFactors.irrigatedLand >= 20 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : data.riskFactors.irrigatedLand >= 5 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                      getLatestValue(data.riskFactors.irrigatedLand)! >= 20 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : getLatestValue(data.riskFactors.irrigatedLand)! >= 5 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                    }`}>{data.riskFactors.irrigatedLand >= 20 ? 'Irrigated' : data.riskFactors.irrigatedLand >= 5 ? 'Partial' : 'Rain-dependent'}</span>
+                    }`}>{getLatestValue(data.riskFactors.irrigatedLand)! >= 20 ? 'Irrigated' : getLatestValue(data.riskFactors.irrigatedLand)! >= 5 ? 'Partial' : 'Rain-dependent'}</span>
                   </div>
                 </div>
               )}

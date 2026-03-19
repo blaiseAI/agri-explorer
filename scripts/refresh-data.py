@@ -1352,9 +1352,13 @@ def main():
     if "worldBankData" in output:
         for country, indicators in output["worldBankData"].items():
             for indicator, years in indicators.items():
-                for year, val in years.items():
+                if isinstance(years, dict):
+                    for year, val in years.items():
+                        cur.execute("INSERT INTO world_bank_metrics (country, indicator, year, value) VALUES (?, ?, ?, ?)",
+                                    (country, indicator, int(year), val))
+                else:
                     cur.execute("INSERT INTO world_bank_metrics (country, indicator, year, value) VALUES (?, ?, ?, ?)",
-                                (country, indicator, int(year), val))
+                                (country, indicator, int(YEAR_END), years))
 
     # Insert global_avg_yields
     if "globalAvgYields" in output:

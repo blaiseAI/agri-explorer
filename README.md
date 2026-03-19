@@ -2,7 +2,7 @@
 
 Discover agricultural investment opportunities across **54 African countries** and **136 crops**. AgriScope surfaces production trends, yield gaps, trade signals, and economic indicators to help people understand where opportunities may exist — without making financial advice.
 
-**[View Live Demo](https://www.perplexity.ai/computer/a/agriscope-african-agricultural-mFGPaYtOTI.0qA5ztV3ubw)**
+**[View Live Demo](https://agriscope.blaise.ai)**
 
 ---
 
@@ -177,4 +177,4 @@ MIT
 
 ---
 
-Built with [Perplexity Computer](https://www.perplexity.ai/computer)
+Created by Blaise Sebagabo
