@@ -25,6 +25,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     secret: process.env.BETTER_AUTH_SECRET,
     database: authComponent.adapter(ctx),
     trustedOrigins: [
+      "https://p0cc8gs8c4wc0wo80k888o8w.duseb.pro",
       "http://localhost:4040",
       "http://localhost:4000",
       "http://localhost:3000",
