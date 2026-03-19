@@ -4,7 +4,14 @@ import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAv
 import { generateInsights, generateDiverseInsights, generateLeaderboard, generateTopCrops, generateSimilarOpportunities } from "./insights";
 import Parser from "rss-parser";
 
-const parser = new Parser();
+const parser = new Parser({
+  customFields: {
+    item: [
+      // Instruct rss-parser to look for <media:content url="..."> 
+      ['media:content', 'mediaContent'] // Some RSS feeds use this
+    ]
+  }
+});
 const newsCache = new Map<string, { timestamp: number; data: any[] }>();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
@@ -357,12 +364,34 @@ export async function registerRoutes(
       // Fetch from Google News
       const feed = await parser.parseURL(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`);
       
-      const articles = feed.items.slice(0, 5).map(item => ({
-        title: item.title,
-        link: item.link,
-        source: item.source || item.creator || extractSourceFromTitle(item.title) || 'News',
-        pubDate: item.pubDate,
-      }));
+      const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+      
+      const articles = feed.items
+        .filter(item => {
+          if (!item.pubDate) return true;
+          return (now - new Date(item.pubDate).getTime()) < ninetyDaysMs;
+        })
+        .slice(0, 10) // fetch more to satisfy limits after filtering
+        .map(item => {
+          let thumbnail = null;
+          // Try to extract from custom field mediaContent
+          if (item.mediaContent && item.mediaContent.$ && item.mediaContent.$.url) {
+            thumbnail = item.mediaContent.$.url;
+          } else if (item.content) {
+            // Google News sometimes embeds thumbnails in html payload
+            const imgMatch = item.content.match(/<img[^>]+src="([^">]+)"/);
+            if (imgMatch && imgMatch[1]) thumbnail = imgMatch[1];
+          }
+
+          return {
+            title: item.title,
+            link: item.link,
+            source: (item as any).source || item.creator || extractSourceFromTitle(item.title) || 'News',
+            pubDate: item.pubDate,
+            thumbnail,
+            category: categorizeTitle(item.title || ""),
+          };
+        });
 
       // Update cache
       newsCache.set(query, { timestamp: now, data: articles });
@@ -378,6 +407,15 @@ export async function registerRoutes(
     if (!title) return null;
     const parts = title.split(' - ');
     return parts.length > 1 ? parts[parts.length - 1] : null;
+  }
+  
+  function categorizeTitle(title: string) {
+    const t = title.toLowerCase();
+    if (t.includes("invest") || t.includes("fund") || t.includes("fdi") || t.includes("capital") || t.includes("finance") || t.includes("bank")) return "INVESTMENT";
+    if (t.includes("export") || t.includes("import") || t.includes("trade") || t.includes("cargo") || t.includes("ship") || t.includes("border")) return "TRADE";
+    if (t.includes("policy") || t.includes("government") || t.includes("ban") || t.includes("law") || t.includes("tariff") || t.includes("tax") || t.includes("minister")) return "POLICY";
+    if (t.includes("drought") || t.includes("weather") || t.includes("climate") || t.includes("rain") || t.includes("flood")) return "CLIMATE";
+    return "MARKETS";
   }
 
   return httpServer;

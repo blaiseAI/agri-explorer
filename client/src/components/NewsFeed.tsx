@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExternalLink, Newspaper } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 export default function NewsFeed({ query, limit = 3, country }: { query: string; limit?: number; country: string }) {
   const { data: news, isLoading, isError } = useQuery<any[]>({
@@ -27,9 +28,10 @@ export default function NewsFeed({ query, limit = 3, country }: { query: string;
       <CardContent className="flex-1 flex flex-col pt-4 space-y-4">
         {isLoading ? (
           Array.from({ length: limit }).map((_, i) => (
-            <div key={i} className="space-y-2 pb-1 border-b last:border-0 border-border/50">
+            <div key={i} className="space-y-2 pb-3 border-b border-border/80 last:border-0 last:pb-0">
               <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-3 w-2/3" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-3 w-1/3" />
             </div>
           ))
         ) : (
@@ -39,15 +41,36 @@ export default function NewsFeed({ query, limit = 3, country }: { query: string;
               href={item.link} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="group block space-y-1.5 cursor-pointer pb-3 border-b last:border-0 border-border/50 last:pb-0"
+              className="group block space-y-2 cursor-pointer pb-4 border-b border-border/80 last:border-0 last:pb-0"
             >
-              <h4 className="text-sm font-medium leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
-                {item.title?.replace(/ - .*$/, '')}
-              </h4>
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                <span className="font-semibold text-foreground/70">{item.source}</span>
-                <span>•</span>
-                <span>{item.pubDate ? formatDistanceToNow(new Date(item.pubDate), { addSuffix: true }) : ''}</span>
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2 mb-1">
+                    {item.category && item.category !== 'MARKETS' && (
+                      <Badge variant="outline" className={`text-[9px] px-1.5 py-0 h-4 uppercase font-bold tracking-wider rounded-sm border-transparent ${
+                        item.category === 'INVESTMENT' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                        item.category === 'TRADE' ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' :
+                        item.category === 'POLICY' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' :
+                        'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}>
+                        {item.category}
+                      </Badge>
+                    )}
+                  </div>
+                  <h4 className="text-sm font-medium leading-[1.3] group-hover:text-blue-600 dark:group-hover:text-blue-400 object-cover transition-colors line-clamp-2 break-words text-foreground/90">
+                    {item.title?.replace(/ - .*$/, '')}
+                  </h4>
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-0.5">
+                    <span className="font-semibold text-foreground/70 truncate">{item.source}</span>
+                    <span className="shrink-0">•</span>
+                    <span className="shrink-0">{item.pubDate ? formatDistanceToNow(new Date(item.pubDate), { addSuffix: true }) : ''}</span>
+                  </div>
+                </div>
+                {item.thumbnail && (
+                  <div className="shrink-0 w-16 h-16 rounded overflow-hidden bg-muted/30 border">
+                    <img src={item.thumbnail} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                )}
               </div>
             </a>
           ))

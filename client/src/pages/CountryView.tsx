@@ -575,7 +575,7 @@ export default function CountryView() {
           )}
         </div>
         
-        <div className="xl:col-span-1">
+        <div className="xl:col-span-1 xl:sticky xl:top-6 self-start">
           <NewsFeed query={`${country} agriculture investment`} limit={4} country={country} />
         </div>
       </div>
