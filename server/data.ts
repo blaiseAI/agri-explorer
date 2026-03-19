@@ -43,7 +43,16 @@ function getDb(): Database.Database | null {
   
   if (!fs.existsSync(DB_PATH)) {
     console.warn("[data] agriscope.db not found at", DB_PATH);
-    return null;
+    const backupPath = path.join(__dirname_esm, "../server/data/agriscope.db");
+    if (fs.existsSync(backupPath)) {
+      console.log("[data] Sowing initial database into volume from", backupPath);
+      if (!fs.existsSync(path.dirname(DB_PATH))) {
+        fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+      }
+      fs.copyFileSync(backupPath, DB_PATH);
+    } else {
+      return null;
+    }
   }
   
   try {

@@ -59,6 +59,10 @@ async function buildAll() {
     external: externals,
     logLevel: "info",
   });
+
+  console.log("copying data files...");
+  const { cp } = await import("fs/promises");
+  await cp("server/data", "dist/data", { recursive: true });
 }
 
 buildAll().catch((err) => {
