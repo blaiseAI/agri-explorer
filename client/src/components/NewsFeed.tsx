@@ -18,10 +18,10 @@ export default function NewsFeed({ query, limit = 3, country }: { query: string;
   if (isError) return null; // Silent graceful failure
 
   return (
-    <Card className="flex flex-col h-full hover:border-blue-500/20 transition-colors">
+    <Card className="flex flex-col h-full hover:border-primary/20 transition-colors">
       <CardHeader className="pb-3 border-b bg-muted/20">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Newspaper size={15} className="text-blue-600 dark:text-blue-400" />
+          <Newspaper size={15} className="text-primary" />
           Market Intelligence: {country}
         </CardTitle>
       </CardHeader>
@@ -48,7 +48,7 @@ export default function NewsFeed({ query, limit = 3, country }: { query: string;
                   <div className="flex items-center gap-2 mb-1">
                     {item.category && item.category !== 'MARKETS' && (
                       <Badge variant="outline" className={`text-[9px] px-1.5 py-0 h-4 uppercase font-bold tracking-wider rounded-sm border-transparent ${
-                        item.category === 'INVESTMENT' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                        item.category === 'INVESTMENT' ? 'bg-primary/10 dark:bg-primary/20 text-primary' :
                         item.category === 'TRADE' ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' :
                         item.category === 'POLICY' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' :
                         'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
@@ -57,7 +57,7 @@ export default function NewsFeed({ query, limit = 3, country }: { query: string;
                       </Badge>
                     )}
                   </div>
-                  <h4 className="text-sm font-medium leading-[1.3] group-hover:text-blue-600 dark:group-hover:text-blue-400 object-cover transition-colors line-clamp-2 break-words text-foreground/90">
+                  <h4 className="text-sm font-medium leading-[1.3] group-hover:text-primary object-cover transition-colors line-clamp-2 break-words text-foreground/90">
                     {item.title?.replace(/ - .*$/, '')}
                   </h4>
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-0.5">
@@ -85,7 +85,7 @@ export default function NewsFeed({ query, limit = 3, country }: { query: string;
             href={`https://news.google.com/search?q=${encodeURIComponent(query)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1 hover:underline w-fit"
+            className="text-[11px] text-primary font-medium flex items-center gap-1 hover:underline w-fit"
           >
             View all news on Google <ExternalLink size={10} />
           </a>
