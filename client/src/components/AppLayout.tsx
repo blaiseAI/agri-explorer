@@ -48,9 +48,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link href="/">
-            <div className="flex items-center gap-2.5 cursor-pointer" data-testid="logo-link">
-              <img src="/logo.png" alt="AgriScope logo" width={28} height={28} className="rounded-md object-contain" />
-              <span className="font-semibold text-base tracking-tight">AgriScope</span>
+            <div className="flex items-center gap-2.5 cursor-pointer -ml-1" data-testid="logo-link">
+              <img src="/logo.png" alt="AgriScope logo" width={38} height={38} className="object-contain" />
+              <span className="font-semibold text-lg tracking-tight">AgriScope</span>
             </div>
           </Link>
 
