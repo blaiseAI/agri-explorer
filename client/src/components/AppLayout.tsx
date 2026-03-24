@@ -49,13 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-2.5 cursor-pointer" data-testid="logo-link">
-              <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-label="AgriScope logo" className="text-primary">
-                <rect x="2" y="2" width="28" height="28" rx="6" stroke="currentColor" strokeWidth="2" />
-                <path d="M16 6 C16 6 10 12 10 18 C10 22 12.7 25 16 25 C19.3 25 22 22 22 18 C22 12 16 6 16 6Z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.5" />
-                <line x1="16" y1="14" x2="16" y2="25" stroke="currentColor" strokeWidth="1.5" />
-                <line x1="16" y1="17" x2="13" y2="15" stroke="currentColor" strokeWidth="1.2" />
-                <line x1="16" y1="20" x2="19.5" y2="17.5" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
+              <img src="/logo.png" alt="AgriScope logo" width={28} height={28} className="rounded-md object-contain" />
               <span className="font-semibold text-base tracking-tight">AgriScope</span>
             </div>
           </Link>
