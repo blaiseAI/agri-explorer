@@ -69,7 +69,7 @@ const PLANS = [
 
 const FAQ = [
   {
-    q: "What data sources does AgriScope use?",
+    q: "What data sources does Afrixplorer use?",
     a: "We aggregate data from FAOSTAT (crop production, yields, area harvested), the World Bank (economic indicators), and UN Comtrade (trade flows). All data is refreshed weekly.",
   },
   {
@@ -86,7 +86,7 @@ const FAQ = [
   },
   {
     q: "How many countries and crops do you cover?",
-    a: "AgriScope covers 54 African countries and 136+ crops with data spanning from 2010 to the present.",
+    a: "Afrixplorer covers 54 African countries and 136+ crops with data spanning from 2010 to the present.",
   },
 ];
 
@@ -97,7 +97,7 @@ export default function PricingPage() {
   const handleSubscribe = (plan: string) => {
     if (plan === "Free") return;
     if (plan === "Enterprise") {
-      window.location.href = "mailto:hello@agriscope.io?subject=Enterprise%20Inquiry";
+      window.location.href = "mailto:hello@afrixplorer.io?subject=Enterprise%20Inquiry";
       return;
     }
     toast({

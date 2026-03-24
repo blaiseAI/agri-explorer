@@ -44,7 +44,7 @@ YEAR_END = 2024
 
 print("📦 Fetching FAOSTAT Trade data (TCL, all Africa)...")
 url = "https://bulks-faostat.fao.org/production/Trade_CropsLivestock_E_Africa.zip"
-req = Request(url, headers={"User-Agent": "AgriScope/1.0"})
+req = Request(url, headers={"User-Agent": "Afrixplorer/1.0"})
 with urlopen(req, timeout=180) as resp:
     zip_data = resp.read()
 print(f"  Downloaded {len(zip_data)/1024/1024:.1f} MB")

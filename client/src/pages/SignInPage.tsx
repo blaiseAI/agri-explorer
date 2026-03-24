@@ -76,7 +76,7 @@ export default function SignInPage() {
               <line x1="16" y1="20" x2="19.5" y2="17.5" stroke="currentColor" strokeWidth="1.2" />
             </svg>
           </div>
-          <CardTitle>Sign in to AgriScope</CardTitle>
+          <CardTitle>Sign in to Afrixplorer</CardTitle>
           <CardDescription>Enter your credentials to continue</CardDescription>
         </CardHeader>
         <CardContent>

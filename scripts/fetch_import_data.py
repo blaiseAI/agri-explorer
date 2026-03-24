@@ -58,7 +58,7 @@ def clean_crop_name(name):
 
 print("Downloading FAOSTAT Trade data (TCL)...")
 url = "https://bulks-faostat.fao.org/production/Trade_CropsLivestock_E_Africa.zip"
-req = Request(url, headers={"User-Agent": "AgriScope/1.0"})
+req = Request(url, headers={"User-Agent": "Afrixplorer/1.0"})
 zip_data = urlopen(req, timeout=180).read()
 print(f"  Downloaded {len(zip_data)/1024/1024:.1f} MB")
 

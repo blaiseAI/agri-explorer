@@ -1,8 +1,8 @@
-# AgriScope — African Agricultural Investment Explorer
+# Afrixplorer — African Agricultural Investment Explorer
 
-Discover agricultural investment opportunities across **54 African countries** and **136 crops**. AgriScope surfaces production trends, yield gaps, trade signals, and economic indicators to help people understand where opportunities may exist — without making financial advice.
+Discover agricultural investment opportunities across **54 African countries** and **136 crops**. Afrixplorer surfaces production trends, yield gaps, trade signals, and economic indicators to help people understand where opportunities may exist — without making financial advice.
 
-**[View Live Demo](https://agriscope.blaise.ai)**
+**[View Live Demo](https://afrixplorer.blaise.ai)**
 
 ---
 
@@ -71,8 +71,8 @@ Data spans **2010–2024** and is refreshed automatically every Monday via `scri
 ### Install
 
 ```bash
-git clone https://github.com/blaiseAI/agri-explorer.git
-cd agri-explorer
+git clone https://github.com/blaiseAI/Afrixplorer.git
+cd Afrixplorer
 npm install
 ```
 
@@ -112,7 +112,7 @@ This outputs `server/data/live-data.json` (~1.5 MB) containing all 54 countries,
 ## Project Structure
 
 ```
-agri-explorer/
+Afrixplorer/
 ├── client/                     # React frontend
 │   ├── src/
 │   │   ├── components/         # UI components (shadcn/ui + custom)
@@ -167,7 +167,7 @@ agri-explorer/
 
 ## Disclaimer
 
-AgriScope is an informational tool that surfaces publicly available agricultural data. It does **not** provide financial advice. Investment signals are algorithmically generated based on historical trends and should not be interpreted as recommendations. Always conduct your own due diligence before making investment decisions.
+Afrixplorer is an informational tool that surfaces publicly available agricultural data. It does **not** provide financial advice. Investment signals are algorithmically generated based on historical trends and should not be interpreted as recommendations. Always conduct your own due diligence before making investment decisions.
 
 ---
 

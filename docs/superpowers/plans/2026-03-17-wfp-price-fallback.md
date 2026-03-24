@@ -267,7 +267,7 @@ Add to metadata sources:
 
 - [ ] **Step 5: Run the refresh script and verify output**
 
-Run: `cd /Users/bg/Developer/agri-explorer && python3 scripts/refresh-data.py`
+Run: `cd /Users/bg/Developer/Afrixplorer && python3 scripts/refresh-data.py`
 
 Verify: `python3 -c "import json; d=json.load(open('server/data/live-data.json')); wp=d.get('wfpPrices',{}); print(f'Countries: {len(wp)}'); ng=wp.get('Nigeria',{}); print(f'Nigeria crops: {list(ng.keys())}'); print(f'Nigeria Yams: {ng.get(\"Yams\",{})}')"`
 
@@ -338,7 +338,7 @@ In the `getBestPrice()` function, after the "Check actual price data first" bloc
 
 - [ ] **Step 3: Build check**
 
-Run: `cd /Users/bg/Developer/agri-explorer && npx tsc --noEmit`
+Run: `cd /Users/bg/Developer/Afrixplorer && npx tsc --noEmit`
 
 Expected: No TypeScript errors.
 
@@ -367,7 +367,7 @@ Expected: Kenya/Maize should still show "FAOSTAT 2024" since it has fresh data.
 
 - [ ] **Step 2: Full build check**
 
-Run: `cd /Users/bg/Developer/agri-explorer && npm run build`
+Run: `cd /Users/bg/Developer/Afrixplorer && npm run build`
 
 Expected: Builds successfully.
 

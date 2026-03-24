@@ -49,8 +49,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-2.5 cursor-pointer -ml-1" data-testid="logo-link">
-              <img src="/logo.png" alt="AgriScope logo" width={38} height={38} className="object-contain scale-[1.35] ml-1" title="AgriScope" />
-              <span className="font-semibold text-lg tracking-tight ml-2">AgriScope</span>
+              <img src="/logo.png" alt="Afrixplorer logo" width={38} height={38} className="object-contain scale-[1.35] ml-1" title="Afrixplorer" />
+              <span className="font-semibold text-lg tracking-tight ml-2">Afrixplorer</span>
             </div>
           </Link>
 

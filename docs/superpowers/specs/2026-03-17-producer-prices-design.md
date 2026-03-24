@@ -2,9 +2,9 @@
 
 ## Goal
 
-Wire FAOSTAT Producer Prices (USD/tonne) into AgriScope to compute **estimated gross revenue per hectare** on the crop detail page (`/explore/{country}/{crop}`), and add a **Revenue/Ha sort** on the crops comparison page (`/crop/{crop}`).
+Wire FAOSTAT Producer Prices (USD/tonne) into Afrixplorer to compute **estimated gross revenue per hectare** on the crop detail page (`/explore/{country}/{crop}`), and add a **Revenue/Ha sort** on the crops comparison page (`/crop/{crop}`).
 
-This turns AgriScope from a data explorer into an investment screener.
+This turns Afrixplorer from a data explorer into an investment screener.
 
 ## Data Source
 
@@ -28,7 +28,7 @@ Element Code, Element, Months Code, Months, Unit, Y1991...Y2025
 
 ### Data Pipeline (`scripts/refresh-data.py`)
 
-#### [MODIFY] [refresh-data.py](file:///Users/bg/Developer/agri-explorer/scripts/refresh-data.py)
+#### [MODIFY] [refresh-data.py](file:///Users/bg/Developer/Afrixplorer/scripts/refresh-data.py)
 
 Add a new function `fetch_faostat_prices()` following the same pattern as `fetch_faostat_data()`:
 
@@ -47,7 +47,7 @@ In `main()`, call the new function and write the result to `output["producerPric
 
 ### Data Layer (`server/data.ts`)
 
-#### [MODIFY] [data.ts](file:///Users/bg/Developer/agri-explorer/server/data.ts)
+#### [MODIFY] [data.ts](file:///Users/bg/Developer/Afrixplorer/server/data.ts)
 
 Add a new getter:
 ```ts
@@ -62,7 +62,7 @@ export function getProducerPrices(): Record<string, Record<string, Record<string
 
 ### API Routes (`server/routes.ts`)
 
-#### [MODIFY] [routes.ts](file:///Users/bg/Developer/agri-explorer/server/routes.ts)
+#### [MODIFY] [routes.ts](file:///Users/bg/Developer/Afrixplorer/server/routes.ts)
 
 **Modify `/api/crop-data/:country/:crop`** — add `producerPrices` to the response:
 ```ts
@@ -81,7 +81,7 @@ This enables the Revenue/Ha sort on the frontend without additional API calls.
 
 ### Frontend — Crop Detail Page
 
-#### [MODIFY] [CropDetail.tsx](file:///Users/bg/Developer/agri-explorer/client/src/pages/CropDetail.tsx)
+#### [MODIFY] [CropDetail.tsx](file:///Users/bg/Developer/Afrixplorer/client/src/pages/CropDetail.tsx)
 
 Add a 5th KPI card when producer price data is available:
 
@@ -107,7 +107,7 @@ const revenuePerHa = yieldTonnesPerHa * avgPrice;
 
 ### Frontend — Crop Comparison Page
 
-#### [MODIFY] [CropView.tsx](file:///Users/bg/Developer/agri-explorer/client/src/pages/CropView.tsx)
+#### [MODIFY] [CropView.tsx](file:///Users/bg/Developer/Afrixplorer/client/src/pages/CropView.tsx)
 
 Add `Revenue/Ha` to the `SortField` type and `SortHeader` bar:
 ```
@@ -120,7 +120,7 @@ Use the pre-computed `revenuePerHa` from the `/api/crop/:crop` response.
 
 ### Frontend — Country Page
 
-#### [MODIFY] [CountryView.tsx](file:///Users/bg/Developer/agri-explorer/client/src/pages/CountryView.tsx)
+#### [MODIFY] [CountryView.tsx](file:///Users/bg/Developer/Afrixplorer/client/src/pages/CountryView.tsx)
 
 On each crop card, add a small revenue badge when available:
 ```

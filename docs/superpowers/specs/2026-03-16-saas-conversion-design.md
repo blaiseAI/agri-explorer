@@ -1,6 +1,6 @@
-# AgriScope SaaS Conversion Design
+# Afrixplorer SaaS Conversion Design
 
-Transform AgriScope from an open data explorer into a freemium SaaS product with authentication, subscription billing, and tiered access control.
+Transform Afrixplorer from an open data explorer into a freemium SaaS product with authentication, subscription billing, and tiered access control.
 
 ## Decisions Made
 

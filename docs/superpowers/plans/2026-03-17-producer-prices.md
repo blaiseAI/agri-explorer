@@ -131,7 +131,7 @@ Also add to the metadata sources dict:
 
 - [ ] **Step 3: Run the refresh script and verify output**
 
-Run: `cd /Users/bg/Developer/agri-explorer && python3 scripts/refresh-data.py`
+Run: `cd /Users/bg/Developer/Afrixplorer && python3 scripts/refresh-data.py`
 
 Expected: Script completes, `server/data/live-data.json` has a `producerPrices` key with country→crop→year→price structure.
 
@@ -280,7 +280,7 @@ Change the grid from `grid-cols-2 lg:grid-cols-4` to `grid-cols-2 lg:grid-cols-5
 
 - [ ] **Step 3: Build check**
 
-Run: `cd /Users/bg/Developer/agri-explorer && npx tsc --noEmit`
+Run: `cd /Users/bg/Developer/Afrixplorer && npx tsc --noEmit`
 
 Expected: No TypeScript errors.
 
@@ -361,7 +361,7 @@ git commit -m "feat: show revenue badge on country crop cards"
 
 - [ ] **Step 1: Full build check**
 
-Run: `cd /Users/bg/Developer/agri-explorer && npm run build`
+Run: `cd /Users/bg/Developer/Afrixplorer && npm run build`
 
 Expected: Builds successfully.
 

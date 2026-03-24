@@ -45,7 +45,7 @@ for indicator_id, indicator_name in NEW_INDICATORS.items():
             f"?format=json&mrv=1&per_page=300"
         )
         try:
-            req = Request(url, headers={"User-Agent": "AgriScope/1.0"})
+            req = Request(url, headers={"User-Agent": "Afrixplorer/1.0"})
             with urlopen(req, timeout=15) as resp:
                 data = json.loads(resp.read().decode())
             

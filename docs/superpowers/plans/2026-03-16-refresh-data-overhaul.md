@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3 (stdlib only — no new dependencies)
 
-**Spec:** [`docs/superpowers/specs/2026-03-16-refresh-data-overhaul-design.md`](file:///Users/bg/Developer/agri-explorer/docs/superpowers/specs/2026-03-16-refresh-data-overhaul-design.md)
+**Spec:** [`docs/superpowers/specs/2026-03-16-refresh-data-overhaul-design.md`](file:///Users/bg/Developer/Afrixplorer/docs/superpowers/specs/2026-03-16-refresh-data-overhaul-design.md)
 
 ---
 

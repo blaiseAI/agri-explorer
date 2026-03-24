@@ -1,4 +1,4 @@
-# AgriScope — Developer Change Guide
+# Afrixplorer — Developer Change Guide
 
 Complete specification for all required changes. Work through sections in order — **Section 1 is the highest priority** as it unlocks the core investment use case. Sections 2–4 are display/UX fixes that can be shipped in parallel. Section 5 is new World Bank indicators that enrich signals.
 
@@ -7,7 +7,7 @@ Complete specification for all required changes. Work through sections in order 
 ## Section 1 — The Real Data Gap: FAOSTAT Producer Prices (HIGHEST PRIORITY)
 
 ### Why this matters
-Right now the tool shows *what is growing* but not *what it's worth*. Wiring in Producer Prices unlocks an estimated gross revenue per hectare — turning AgriScope from a data explorer into an investment screener.
+Right now the tool shows *what is growing* but not *what it's worth*. Wiring in Producer Prices unlocks an estimated gross revenue per hectare — turning Afrixplorer from a data explorer into an investment screener.
 
 ### What the data is
 **FAOSTAT Producer Prices domain — `PP`**

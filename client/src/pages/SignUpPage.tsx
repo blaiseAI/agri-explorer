@@ -54,7 +54,7 @@ export default function SignUpPage() {
           variant: "destructive",
         });
       } else {
-        toast({ title: "Account created!", description: "Welcome to AgriScope. You're now signed in." });
+        toast({ title: "Account created!", description: "Welcome to Afrixplorer. You're now signed in." });
         setLocation("/");
       }
     } catch (err: any) {

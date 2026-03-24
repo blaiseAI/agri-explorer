@@ -97,7 +97,7 @@ WFP prices are keyed by **display name** (e.g. `"Nigeria"`, `"Kenya"`) — the s
 
 ### Data Pipeline
 
-#### [MODIFY] [refresh-data.py](file:///Users/bg/Developer/agri-explorer/scripts/refresh-data.py)
+#### [MODIFY] [refresh-data.py](file:///Users/bg/Developer/Afrixplorer/scripts/refresh-data.py)
 
 Add `fetch_wfp_prices()` function:
 
@@ -152,7 +152,7 @@ Not every country has a WFP dataset. The pipeline should gracefully skip missing
 
 ### Server Data Layer
 
-#### [MODIFY] [data.ts](file:///Users/bg/Developer/agri-explorer/server/data.ts)
+#### [MODIFY] [data.ts](file:///Users/bg/Developer/Afrixplorer/server/data.ts)
 
 Add `getWfpPrices()` getter and update `BestPrice` interface:
 ```ts

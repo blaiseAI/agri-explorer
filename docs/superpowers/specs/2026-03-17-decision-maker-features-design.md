@@ -1,6 +1,6 @@
 # Decision-Maker Features — Design Spec
 
-Transform AgriScope from a data browser into a decision tool by surfacing ranked opportunities directly on the dashboard and detail pages.
+Transform Afrixplorer from a data browser into a decision tool by surfacing ranked opportunities directly on the dashboard and detail pages.
 
 ## Build Order
 

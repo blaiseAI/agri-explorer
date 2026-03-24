@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AgriScope Data Refresh Script — Full Africa Edition
+Afrixplorer Data Refresh Script — Full Africa Edition
 Pulls live data from:
   1. FAOSTAT (bulk CSV) - crop production, yields, area harvested for ALL African countries
   2. World Bank API     - agriculture GDP %, rural population %, ag employment %, population
@@ -218,7 +218,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 DATA_DIR = os.path.join(PROJECT_DIR, "server", "data")
 OUTPUT_FILE = os.path.join(DATA_DIR, "live-data.json")
-DB_FILE = os.path.join(DATA_DIR, "agriscope.db")
+DB_FILE = os.path.join(DATA_DIR, "afrixplorer.db")
 
 DB_SCHEMA = """
 CREATE TABLE metadata (
@@ -268,7 +268,7 @@ CREATE TABLE world_bank_metrics (
 def fetch_url(url, max_retries=3, timeout=30):
     for attempt in range(max_retries):
         try:
-            req = Request(url, headers={"User-Agent": "AgriScope/1.0"})
+            req = Request(url, headers={"User-Agent": "Afrixplorer/1.0"})
             with urlopen(req, timeout=timeout) as resp:
                 return resp.read()
         except (URLError, HTTPError) as e:
@@ -963,7 +963,7 @@ def fetch_comtrade_data(top_exporters):
                 f"&cmdCode={hs_code}&flowCode=X"
             )
             try:
-                req = Request(url, headers={"User-Agent": "AgriScope/1.0"})
+                req = Request(url, headers={"User-Agent": "Afrixplorer/1.0"})
                 with urlopen(req, timeout=15) as resp:
                     data = json.loads(resp.read().decode())
                 
@@ -1039,7 +1039,7 @@ def build_top_exporters(crop_data, countries_info, n_crops=20, n_countries=3):
 
 def main():
     print("=" * 60)
-    print("AgriScope Data Refresh — Full Africa")
+    print("Afrixplorer Data Refresh — Full Africa")
     print(f"Started: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
     print("=" * 60)
     
