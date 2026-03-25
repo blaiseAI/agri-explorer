@@ -1,20 +1,42 @@
 import React from 'react';
-import { ShaderGradientCanvas, ShaderGradient } from '@shadergradient/react';
 
 export const ShaderBackground = () => {
   return (
-    <div className="absolute inset-0 -z-10 h-full w-full overflow-hidden opacity-40 mix-blend-screen pointer-events-none">
-      <ShaderGradientCanvas
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        pointerEvents="none"
-      >
-        <ShaderGradient
-          control="query"
-          urlString="https://www.shadergradient.co/customize?animate=on&axesHelper=off&bgColor1=%23000000&bgColor2=%23000000&brightness=1.2&cAzimuthAngle=180&cDistance=3.6&cPolarAngle=90&cameraZoom=1&color1=%23022c22&color2=%2315803d&color3=%2310b981&envPreset=city&fov=45&gizmoHelper=hide&lightType=3d&pixelDensity=1.5&positionX=-1.4&positionY=0&positionZ=0&reflection=0.1&rotationX=0&rotationY=10&rotationZ=50&shader=fluid&type=sphere&uAmplitude=0&uDensity=1.3&uFrequency=5.5&uSpeed=0.15&uStrength=2.4&uTime=0&wireframe=false"
-        />
-      </ShaderGradientCanvas>
-      {/* Fallback gradient / tint just in case WebGL fails to load instantly */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/95" />
+    <div className="absolute inset-0 -z-10 h-full w-full overflow-hidden bg-zinc-950 pointer-events-none">
+      {/* 
+        Ultra-lightweight Pure CSS Mesh Gradient 
+        Yields the exact same "premium" WebGL aesthetic but with zero HTTP requests, 
+        0 dependencies, and no React Fiber compilation errors.
+      */}
+      
+      {/* Deep Emerald Ambient Glow */}
+      <div 
+        className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full opacity-40 mix-blend-screen blur-[120px] animate-pulse"
+        style={{ backgroundColor: '#064e3b', animationDuration: '8s' }} 
+      />
+      
+      {/* Bright Green Accent Orb */}
+      <div 
+        className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-30 mix-blend-screen blur-[100px] animate-pulse"
+        style={{ backgroundColor: '#15803d', animationDuration: '12s', animationDelay: '2s' }} 
+      />
+
+      {/* Subtle Teal Cross-fade */}
+      <div 
+        className="absolute top-[30%] right-[10%] w-[40%] h-[40%] rounded-full opacity-20 mix-blend-screen blur-[90px] animate-pulse"
+        style={{ backgroundColor: '#0f766e', animationDuration: '10s', animationDelay: '4s' }} 
+      />
+
+      {/* SVG Noise Texture for that "Premium/Textured" matte look */}
+      <div 
+        className="absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")'
+        }}
+      />
+      
+      {/* Bottom Vignette to let the text read cleanly */}
+      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent" />
     </div>
   );
 };
