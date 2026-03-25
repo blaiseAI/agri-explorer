@@ -85,6 +85,10 @@ export default function CountryView() {
 
   const country = params.country || topProducer || "Nigeria";
 
+  useEffect(() => {
+    document.title = `${country} Agricultural Data | Afrixplorer`;
+  }, [country]);
+
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [cropSort, setCropSort] = useState<"production" | "revenue" | "yield" | "growth">("production");

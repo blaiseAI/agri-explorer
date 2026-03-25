@@ -4,6 +4,7 @@ export function injectSEO(url: string, template: string): string {
   const COUNTRIES = getCountries();
   let title = "Afrixplorer";
   let description = "Discover African agricultural investment opportunities";
+  let schemaData: any = null;
 
   try {
     const parts = url.split("/").filter(Boolean);
@@ -15,6 +16,20 @@ export function injectSEO(url: string, template: string): string {
       if (country) {
         title = `${country.name} Agricultural Data | Afrixplorer`;
         description = `Explore historical crop production, yield, and agricultural investment opportunities in ${country.name}.`;
+        schemaData = {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "name": `Agricultural Production Data for ${country.name}`,
+          "description": description,
+          "spatialCoverage": {
+            "@type": "Place",
+            "name": country.name
+          },
+          "creator": {
+            "@type": "Organization",
+            "name": "Afrixplorer"
+          }
+        };
       }
     } 
     // /crop/:cropName
@@ -22,6 +37,17 @@ export function injectSEO(url: string, template: string): string {
       const cropName = decodeURIComponent(parts[1]);
       title = `${cropName} Production & Trade | Afrixplorer`;
       description = `Analyze global and African production, yield trends, and trade data for ${cropName}.`;
+      schemaData = {
+        "@context": "https://schema.org/",
+        "@type": "Dataset",
+        "name": `Global ${cropName} Production Data`,
+        "description": description,
+        "keywords": [cropName, "Agriculture", "Yield", "Production"],
+        "creator": {
+          "@type": "Organization",
+          "name": "Afrixplorer"
+        }
+      };
     } 
     // /explore/:code/:cropName
     else if (parts[0] === "explore" && parts.length >= 3) {
@@ -31,6 +57,21 @@ export function injectSEO(url: string, template: string): string {
       if (country) {
         title = `${cropName} in ${country.name} | Afrixplorer`;
         description = `Deep-dive into ${cropName} production volume, planted area, and yield metrics in ${country.name}.`;
+        schemaData = {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "name": `${cropName} Production in ${country.name}`,
+          "description": description,
+          "spatialCoverage": {
+            "@type": "Place",
+            "name": country.name
+          },
+          "keywords": [cropName, country.name, "Agriculture", "Yield"],
+          "creator": {
+            "@type": "Organization",
+            "name": "Afrixplorer"
+          }
+        };
       }
     }
     else if (parts[0] === "pricing") {
@@ -61,6 +102,14 @@ export function injectSEO(url: string, template: string): string {
     /<meta property="og:description" content="[^"]*">/,
     `<meta property="og:description" content="${description}">`
   );
+
+  // Inject JSON-LD Schema
+  if (schemaData) {
+    html = html.replace(
+      "</head>",
+      `<script type="application/ld+json">\n${JSON.stringify(schemaData)}\n</script>\n  </head>`
+    );
+  }
 
   return html;
 }

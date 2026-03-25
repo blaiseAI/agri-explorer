@@ -77,6 +77,10 @@ export default function CropDetail() {
   const { toast } = useToast();
   const { isMonetizationEnabled } = useMonetization();
 
+  useEffect(() => {
+    document.title = `${crop} in ${country} | Afrixplorer`;
+  }, [country, crop]);
+
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/crop-data", country, crop],
     queryFn: getQueryFn({ on401: "throw" }),

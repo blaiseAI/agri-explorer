@@ -104,6 +104,10 @@ export default function CropView() {
   const { toast } = useToast();
   const { isMonetizationEnabled } = useMonetization();
 
+  useEffect(() => {
+    document.title = `${crop} Production & Trade | Afrixplorer`;
+  }, [crop]);
+
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("production");
