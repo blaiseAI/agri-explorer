@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices, getBestPrice } from "./data";
 import { generateInsights, generateDiverseInsights, generateLeaderboard, generateTopCrops, generateSimilarOpportunities } from "./insights";
+import { generateOGImage } from "./og";
 import Parser from "rss-parser";
 
 const parser = new Parser({
@@ -45,6 +46,9 @@ export async function registerRoutes(
   app.get("/api/crops", (_req, res) => {
     res.json(getCrops());
   });
+
+  // Serve custom dynamic Open Graph thumbnails
+  app.get("/api/og", generateOGImage);
 
   // Get crop data for a specific country and crop
   app.get("/api/crop-data/:country/:crop", (req, res) => {

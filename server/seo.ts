@@ -103,6 +103,19 @@ export function injectSEO(url: string, template: string): string {
     `<meta property="og:description" content="${description}">`
   );
 
+  // Inject dynamic Open Graph Image
+  const encodedTitle = encodeURIComponent(title.replace(" | Afrixplorer", ""));
+  const shortDesc = description.length > 65 ? description.substring(0, 62) + "..." : description;
+  const encodedSubtitle = encodeURIComponent(shortDesc);
+  const ogImageUrl = url === "/" || url === "" 
+    ? "https://afrixplorer.com/apple-touch-icon.png"
+    : `https://afrixplorer.com/api/og?title=${encodedTitle}&subtitle=${encodedSubtitle}`;
+  
+  html = html.replace(
+    /<meta property="og:image" content="[^"]*">/,
+    `<meta property="og:image" content="${ogImageUrl}">`
+  );
+
   // Inject dynamic canonical tag
   // We use the raw URL (which excludes query parameters since we split by "/") to prevent duplicate content indexing
   const canonicalUrl = `https://afrixplorer.com${url.split("?")[0]}`;
