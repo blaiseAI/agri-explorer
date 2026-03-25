@@ -51,8 +51,11 @@ export async function generateOGImage(req: Request, res: Response) {
             const fetchRes = await fetch(flagMapping.flag);
             if (fetchRes.ok) {
               const fetchedText = await fetchRes.text();
-              // Strip out the <?xml ... ?> declaration if it exists so it embeds cleanly
-              rawSvg = fetchedText.replace(/<\?xml.*?\?>/gi, "");
+              // Strip out the <?xml ... ?> declaration if it exists
+              // Inject explicit width/height so Sharp (librsvg) successfully parses the nested SVG
+              rawSvg = fetchedText
+                .replace(/<\?xml.*?\?>/gi, "")
+                .replace(/<svg /i, '<svg width="36" height="36" ');
               svgCache.set(flagMapping.flag, rawSvg);
             }
           } catch (fetchErr) {
@@ -61,9 +64,11 @@ export async function generateOGImage(req: Request, res: Response) {
         }
 
         if (rawSvg) {
-          // We wrap the fetched Twemoji SVG in a massive scaled group, perfectly centered, heavily dimmed for background context
+          // Wrap the fetched Twemoji SVG in a massively scaled group.
+          // Translate to center (600, 315), scale it up 35x, and shift back half its native width (-18, -18)
+          // Boost opacity to 0.40 so it creates a visible watermark against the pitch black background
           backgroundSvg = `
-            <g opacity="0.15" transform="translate(600, 315) scale(20) translate(-18, -18)">
+            <g opacity="0.40" transform="translate(600, 315) scale(35) translate(-18, -18)">
               ${rawSvg}
             </g>
           `;
