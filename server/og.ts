@@ -1,80 +1,14 @@
 import { Request, Response } from "express";
 import sharp from "sharp";
-import fs from "fs";
-import path from "path";
-import { getCountries } from "./data";
-
-// In-memory cache for fetched Twemoji SVGs so we don't hammer the CDN
-const svgCache = new Map<string, string>();
-
-let countryFlags: Array<{ flag: string; country: string; code: string }> = [];
-try {
-  const flagsPath = path.resolve(process.cwd(), "country-flags/country-flag.json");
-  if (fs.existsSync(flagsPath)) {
-    countryFlags = JSON.parse(fs.readFileSync(flagsPath, "utf-8"));
-  }
-} catch (e) {
-  console.error("Failed to load country-flags.json:", e);
-}
-
-function resolveCountryName(identifier: string): string {
-  try {
-    const decoded = decodeURIComponent(identifier).toLowerCase();
-    const COUNTRIES = getCountries();
-    const match = COUNTRIES.find(c => c.code.toLowerCase() === decoded || c.name.toLowerCase() === decoded);
-    return match ? match.name : decodeURIComponent(identifier);
-  } catch {
-    return identifier;
-  }
-}
 
 export async function generateOGImage(req: Request, res: Response) {
   try {
     const title = (req.query.title as string) || "Afrixplorer";
     const subtitle = (req.query.subtitle as string) || "African Agricultural Data Platform";
-    const countryParam = req.query.country as string;
     
     // Sanitize to prevent basic XSS breaking the XML or malicious input
     const safeTitle = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const safeSubtitle = subtitle.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-    let backgroundSvg = '';
-    
-    if (countryParam && countryFlags.length > 0) {
-      const countryName = resolveCountryName(countryParam);
-      const flagMapping = countryFlags.find(f => f.country.toLowerCase() === countryName.toLowerCase());
-      
-      if (flagMapping && flagMapping.flag) {
-        let rawSvg = svgCache.get(flagMapping.flag);
-        if (!rawSvg) {
-          try {
-            const fetchRes = await fetch(flagMapping.flag);
-            if (fetchRes.ok) {
-              const fetchedText = await fetchRes.text();
-              // Strip out the <?xml ... ?> declaration if it exists
-              // Inject explicit width/height so Sharp (librsvg) successfully parses the nested SVG
-              rawSvg = fetchedText
-                .replace(/<\?xml.*?\?>/gi, "")
-                .replace(/<svg /i, '<svg width="36" height="36" ');
-              svgCache.set(flagMapping.flag, rawSvg);
-            }
-          } catch (fetchErr) {
-            console.error("Failed to fetch Twemoji SVG:", fetchErr);
-          }
-        }
-
-        if (rawSvg) {
-          // Flag is placed far right (1000, 315) and scaled heavily. 
-          // We mask it with a smooth gradient so it fades completely into the dark background on the left side
-          // where the text lives, creating a beautiful atmospheric accent.
-          backgroundSvg = `
-            <g opacity="0.30" transform="translate(1000, 315) scale(40) translate(-18, -18)" mask="url(#fadeMask)">
-              ${rawSvg}
-            </g>
-          `;
-        }
-      }
-    }
 
     const svg = `
       <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
@@ -87,21 +21,10 @@ export async function generateOGImage(req: Request, res: Response) {
             <stop offset="0%" stop-color="#10b981" />
             <stop offset="100%" stop-color="#34d399" />
           </linearGradient>
-          
-          <!-- Mask for fading the flag from right to left smoothly -->
-          <linearGradient id="fadeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="35%" stop-color="#000000" />
-            <stop offset="100%" stop-color="#ffffff" />
-          </linearGradient>
-          <mask id="fadeMask">
-            <rect width="1200" height="630" fill="url(#fadeGrad)" />
-          </mask>
         </defs>
         
         <!-- Background -->
         <rect width="1200" height="630" fill="url(#bg)" />
-        
-        ${backgroundSvg}
         
         <!-- Background Grid Pattern -->
         <path d="M 0 0 L 1200 630 M 0 630 L 1200 0" stroke="#ffffff" stroke-opacity="0.02" stroke-width="40" />
