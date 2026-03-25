@@ -103,13 +103,31 @@ export function injectSEO(url: string, template: string): string {
     `<meta property="og:description" content="${description}">`
   );
 
+  // Extract country name from URL to pass to OG generator
+  let countryName = "";
+  if (url.startsWith("/country/")) {
+    countryName = decodeURIComponent(url.split("/")[2]);
+  } else if (url.startsWith("/explore/")) {
+    const parts = url.split("/");
+    if (parts.length >= 3) {
+      const iso3 = parts[2];
+      // Reuse the same resolution logic if needed, but since we just need a name match for the flags, 
+      // we'll pass the ISO3 code and let og.ts map it, or we can resolve it here.
+      // For simplicity, we can pass the raw code and let the OG generator resolve it if needed, 
+      // or we can just pass the title which already contains the country name (e.g. "Maize in Uganda" -> extract Uganda).
+      // Actually, since `/explore/UGA/Maize` generates the title "Maize in Uganda", it's easier to just pass the raw ISO3 
+      // and let the OG endpoint handle it.
+      countryName = iso3;
+    }
+  }
+
   // Inject dynamic Open Graph Image
   const encodedTitle = encodeURIComponent(title.replace(" | Afrixplorer", ""));
   const shortDesc = description.length > 65 ? description.substring(0, 62) + "..." : description;
   const encodedSubtitle = encodeURIComponent(shortDesc);
   const ogImageUrl = url === "/" || url === "" 
     ? "https://afrixplorer.com/apple-touch-icon.png"
-    : `https://afrixplorer.com/api/og?title=${encodedTitle}&subtitle=${encodedSubtitle}`;
+    : `https://afrixplorer.com/api/og?title=${encodedTitle}&subtitle=${encodedSubtitle}${countryName ? `&country=${encodeURIComponent(countryName)}` : ''}`;
   
   html = html.replace(
     /<meta property="og:image" content="[^"]*">/,

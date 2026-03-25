@@ -1,14 +1,75 @@
 import { Request, Response } from "express";
 import sharp from "sharp";
+import fs from "fs";
+import path from "path";
+import { getCountries } from "./data";
+
+// In-memory cache for fetched Twemoji SVGs so we don't hammer the CDN
+const svgCache = new Map<string, string>();
+
+let countryFlags: Array<{ flag: string; country: string; code: string }> = [];
+try {
+  const flagsPath = path.resolve(process.cwd(), "country-flags/country-flag.json");
+  if (fs.existsSync(flagsPath)) {
+    countryFlags = JSON.parse(fs.readFileSync(flagsPath, "utf-8"));
+  }
+} catch (e) {
+  console.error("Failed to load country-flags.json:", e);
+}
+
+function resolveCountryName(identifier: string): string {
+  try {
+    const decoded = decodeURIComponent(identifier).toLowerCase();
+    const COUNTRIES = getCountries();
+    const match = COUNTRIES.find(c => c.code.toLowerCase() === decoded || c.name.toLowerCase() === decoded);
+    return match ? match.name : decodeURIComponent(identifier);
+  } catch {
+    return identifier;
+  }
+}
 
 export async function generateOGImage(req: Request, res: Response) {
   try {
     const title = (req.query.title as string) || "Afrixplorer";
     const subtitle = (req.query.subtitle as string) || "African Agricultural Data Platform";
+    const countryParam = req.query.country as string;
     
     // Sanitize to prevent basic XSS breaking the XML or malicious input
     const safeTitle = title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const safeSubtitle = subtitle.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    let backgroundSvg = '';
+    
+    if (countryParam && countryFlags.length > 0) {
+      const countryName = resolveCountryName(countryParam);
+      const flagMapping = countryFlags.find(f => f.country.toLowerCase() === countryName.toLowerCase());
+      
+      if (flagMapping && flagMapping.flag) {
+        let rawSvg = svgCache.get(flagMapping.flag);
+        if (!rawSvg) {
+          try {
+            const fetchRes = await fetch(flagMapping.flag);
+            if (fetchRes.ok) {
+              const fetchedText = await fetchRes.text();
+              // Strip out the <?xml ... ?> declaration if it exists so it embeds cleanly
+              rawSvg = fetchedText.replace(/<\?xml.*?\?>/gi, "");
+              svgCache.set(flagMapping.flag, rawSvg);
+            }
+          } catch (fetchErr) {
+            console.error("Failed to fetch Twemoji SVG:", fetchErr);
+          }
+        }
+
+        if (rawSvg) {
+          // We wrap the fetched Twemoji SVG in a massive scaled group, perfectly centered, heavily dimmed for background context
+          backgroundSvg = `
+            <g opacity="0.15" transform="translate(600, 315) scale(20) translate(-18, -18)">
+              ${rawSvg}
+            </g>
+          `;
+        }
+      }
+    }
 
     const svg = `
       <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
@@ -26,6 +87,11 @@ export async function generateOGImage(req: Request, res: Response) {
         <!-- Background -->
         <rect width="1200" height="630" fill="url(#bg)" />
         
+        ${backgroundSvg}
+        
+        <!-- Foreground darkening overlay strictly to protect legibility if the SVG dictates pure white shards -->
+        <rect width="1200" height="630" fill="#000000" fill-opacity="0.30" />
+
         <!-- Background Grid Pattern -->
         <path d="M 0 0 L 1200 630 M 0 630 L 1200 0" stroke="#ffffff" stroke-opacity="0.02" stroke-width="40" />
         <rect width="1120" height="550" x="40" y="40" fill="none" stroke="url(#primary)" stroke-width="2" stroke-opacity="0.3" rx="16" />
