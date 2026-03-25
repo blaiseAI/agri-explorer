@@ -9,10 +9,10 @@ export function injectSEO(url: string, template: string): string {
   try {
     const parts = url.split("/").filter(Boolean);
     
-    // /country/:code
+    // /country/:countryId
     if (parts[0] === "country" && parts[1]) {
-      const code = parts[1];
-      const country = COUNTRIES.find((c) => c.code === code);
+      const countryId = decodeURIComponent(parts[1]).toLowerCase();
+      const country = COUNTRIES.find((c) => c.code.toLowerCase() === countryId || c.name.toLowerCase() === countryId);
       if (country) {
         title = `${country.name} Agricultural Data | Afrixplorer`;
         description = `Explore historical crop production, yield, and agricultural investment opportunities in ${country.name}.`;
@@ -49,11 +49,11 @@ export function injectSEO(url: string, template: string): string {
         }
       };
     } 
-    // /explore/:code/:cropName
+    // /explore/:countryId/:cropName
     else if (parts[0] === "explore" && parts.length >= 3) {
-      const code = parts[1];
+      const countryId = decodeURIComponent(parts[1]).toLowerCase();
       const cropName = decodeURIComponent(parts[2]);
-      const country = COUNTRIES.find((c) => c.code === code);
+      const country = COUNTRIES.find((c) => c.code.toLowerCase() === countryId || c.name.toLowerCase() === countryId);
       if (country) {
         title = `${cropName} in ${country.name} | Afrixplorer`;
         description = `Deep-dive into ${cropName} production volume, planted area, and yield metrics in ${country.name}.`;
