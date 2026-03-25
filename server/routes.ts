@@ -15,6 +15,17 @@ const parser = new Parser({
 const newsCache = new Map<string, { timestamp: number; data: any[] }>();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
+function resolveCountryName(identifier: string): string {
+  try {
+    const decoded = decodeURIComponent(identifier).toLowerCase();
+    const COUNTRIES = getCountries();
+    const match = COUNTRIES.find(c => c.code.toLowerCase() === decoded || c.name.toLowerCase() === decoded);
+    return match ? match.name : decodeURIComponent(identifier);
+  } catch {
+    return identifier;
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -37,7 +48,8 @@ export async function registerRoutes(
 
   // Get crop data for a specific country and crop
   app.get("/api/crop-data/:country/:crop", (req, res) => {
-    const { country, crop } = req.params;
+    const country = resolveCountryName(req.params.country);
+    const { crop } = req.params;
     const CROP_DATA = getCropData();
     const YEARS = getYears();
     const GLOBAL_AVG_YIELDS = getGlobalAvgYields();
@@ -87,7 +99,7 @@ export async function registerRoutes(
 
   // Get all crop data for one country (overview)
   app.get("/api/country/:country", (req, res) => {
-    const { country } = req.params;
+    const country = resolveCountryName(req.params.country);
     const CROP_DATA = getCropData();
     const GLOBAL_AVG_YIELDS = getGlobalAvgYields();
     const TRADE_DATA = getTradeData();
@@ -268,7 +280,8 @@ export async function registerRoutes(
 
   // Get insights
   app.get("/api/insights", (req, res) => {
-    const country = req.query.country as string | undefined;
+    const rawCountry = req.query.country as string | undefined;
+    const country = rawCountry ? resolveCountryName(rawCountry) : undefined;
     const crop = req.query.crop as string | undefined;
     const insights = generateInsights(country, crop);
     res.json(insights);
@@ -281,13 +294,14 @@ export async function registerRoutes(
 
   // Top crops for investment in a country
   app.get("/api/country/:name/top-crops", (req, res) => {
-    const country = req.params.name;
+    const country = resolveCountryName(req.params.name);
     res.json(generateTopCrops(country));
   });
 
   // Similar opportunities for a country/crop pair
   app.get("/api/similar/:country/:crop", (req, res) => {
-    const { country, crop } = req.params;
+    const country = resolveCountryName(req.params.country);
+    const { crop } = req.params;
     res.json(generateSimilarOpportunities(country, crop));
   });
 
