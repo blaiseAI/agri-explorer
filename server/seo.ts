@@ -103,11 +103,19 @@ export function injectSEO(url: string, template: string): string {
     `<meta property="og:description" content="${description}">`
   );
 
+  // Inject dynamic canonical tag
+  // We use the raw URL (which excludes query parameters since we split by "/") to prevent duplicate content indexing
+  const canonicalUrl = `https://afrixplorer.com${url.split("?")[0]}`;
+  html = html.replace(
+    "</head>",
+    `  <link rel="canonical" href="${canonicalUrl}" />\n  </head>`
+  );
+
   // Inject JSON-LD Schema
   if (schemaData) {
     html = html.replace(
       "</head>",
-      `<script type="application/ld+json">\n${JSON.stringify(schemaData)}\n</script>\n  </head>`
+      `  <script type="application/ld+json">\n${JSON.stringify(schemaData, null, 2)}\n  </script>\n  </head>`
     );
   }
 
