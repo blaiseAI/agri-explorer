@@ -38,6 +38,7 @@ import UpgradePrompt from "@/components/UpgradePrompt";
 import { useMonetization } from "@/hooks/useMonetization";
 import { downloadCSV } from "@/lib/export";
 import NewsFeed from "@/components/NewsFeed";
+import { ShaderBackground } from "@/components/ShaderBackground";
 
 const INSIGHT_ICONS: Record<string, any> = {
   opportunity: Target,
@@ -178,16 +179,19 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Hero */}
-      <div className="space-y-2">
-        <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">
-          Agricultural Investment Explorer
-        </h1>
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Discover agricultural opportunities across {countriesCount} African countries.
-          Explore production trends, yield gaps, and trade signals for {cropsCount} major crops
-          spanning {yearsRange}.
-        </p>
+      {/* Premium WebGL Hero Banner */}
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 p-8 sm:p-12 shadow-2xl">
+        <ShaderBackground />
+        <div className="relative z-10 space-y-4 max-w-3xl">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-md" data-testid="text-page-title">
+            Agricultural Intelligence for Africa
+          </h1>
+          <p className="text-base sm:text-lg text-zinc-200 drop-shadow-sm max-w-2xl">
+            Discover investment opportunities across {countriesCount || 0} African countries.
+            Explore production trends, yield gaps, and trade signals for {cropsCount || 0} major crops
+            spanning {yearsRange || ""}.
+          </p>
+        </div>
       </div>
 
       {/* Data freshness indicator */}
