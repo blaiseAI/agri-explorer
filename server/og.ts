@@ -64,11 +64,11 @@ export async function generateOGImage(req: Request, res: Response) {
         }
 
         if (rawSvg) {
-          // Wrap the fetched Twemoji SVG in a massively scaled group.
-          // Translate to center (600, 315), scale it up 35x, and shift back half its native width (-18, -18)
-          // Boost opacity to 0.40 so it creates a visible watermark against the pitch black background
+          // Flag is placed far right (1000, 315) and scaled heavily. 
+          // We mask it with a smooth gradient so it fades completely into the dark background on the left side
+          // where the text lives, creating a beautiful atmospheric accent.
           backgroundSvg = `
-            <g opacity="0.40" transform="translate(600, 315) scale(35) translate(-18, -18)">
+            <g opacity="0.30" transform="translate(1000, 315) scale(40) translate(-18, -18)" mask="url(#fadeMask)">
               ${rawSvg}
             </g>
           `;
@@ -87,6 +87,15 @@ export async function generateOGImage(req: Request, res: Response) {
             <stop offset="0%" stop-color="#10b981" />
             <stop offset="100%" stop-color="#34d399" />
           </linearGradient>
+          
+          <!-- Mask for fading the flag from right to left smoothly -->
+          <linearGradient id="fadeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="35%" stop-color="#000000" />
+            <stop offset="100%" stop-color="#ffffff" />
+          </linearGradient>
+          <mask id="fadeMask">
+            <rect width="1200" height="630" fill="url(#fadeGrad)" />
+          </mask>
         </defs>
         
         <!-- Background -->
@@ -94,9 +103,6 @@ export async function generateOGImage(req: Request, res: Response) {
         
         ${backgroundSvg}
         
-        <!-- Foreground darkening overlay strictly to protect legibility if the SVG dictates pure white shards -->
-        <rect width="1200" height="630" fill="#000000" fill-opacity="0.30" />
-
         <!-- Background Grid Pattern -->
         <path d="M 0 0 L 1200 630 M 0 630 L 1200 0" stroke="#ffffff" stroke-opacity="0.02" stroke-width="40" />
         <rect width="1120" height="550" x="40" y="40" fill="none" stroke="url(#primary)" stroke-width="2" stroke-opacity="0.3" rx="16" />
