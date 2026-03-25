@@ -418,5 +418,55 @@ export async function registerRoutes(
     return "MARKETS";
   }
 
+  // SEO dynamic sitemap
+  app.get("/sitemap.xml", (_req, res) => {
+    const CROP_DATA = getCropData();
+    const COUNTRIES = getCountries();
+    const siteUrl = "https://afrixplorer.com";
+    
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+    
+    // Static routes
+    const staticRoutes = ["", "/pricing", "/signin", "/signup"];
+    staticRoutes.forEach(route => {
+      xml += `  <url>\n    <loc>${siteUrl}${route}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${route === "" ? "1.0" : "0.8"}</priority>\n  </url>\n`;
+    });
+
+    // Country routes
+    COUNTRIES.forEach(c => {
+      xml += `  <url>\n    <loc>${siteUrl}/country/${c.code}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+    });
+
+    // Crop routes
+    const crops = new Set<string>();
+    for (const [country, countryCrops] of Object.entries(CROP_DATA)) {
+      for (const crop of Object.keys(countryCrops)) {
+        crops.add(crop);
+      }
+    }
+    
+    crops.forEach(crop => {
+      const encodedCrop = encodeURIComponent(crop);
+      xml += `  <url>\n    <loc>${siteUrl}/crop/${encodedCrop}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+    });
+
+    // Country+Crop specific routes
+    COUNTRIES.forEach(c => {
+      const data = CROP_DATA[c.name];
+      if (data) {
+        for (const crop of Object.keys(data)) {
+          const encodedCrop = encodeURIComponent(crop);
+          xml += `  <url>\n    <loc>${siteUrl}/explore/${c.code}/${encodedCrop}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+        }
+      }
+    });
+
+    xml += `</urlset>`;
+    
+    res.header("Content-Type", "application/xml");
+    res.status(200).send(xml);
+  });
+
   return httpServer;
 }
