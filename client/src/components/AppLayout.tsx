@@ -89,7 +89,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             ) : isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
+                  <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" aria-label="User profile menu">
                     <Avatar className="h-7 w-7">
                       <AvatarFallback className="text-xs bg-primary/10 text-primary">
                         {getInitials(user.name)}

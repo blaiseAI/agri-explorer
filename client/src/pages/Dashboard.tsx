@@ -165,10 +165,22 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-32 w-full rounded-xl" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1,2,3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
+      <div className="space-y-8">
+        <Skeleton className="h-24 max-w-2xl rounded-xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-48 mb-2" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-[400px] rounded-xl" />)}
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-5 w-48" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
+          </div>
         </div>
       </div>
     );
@@ -252,6 +264,7 @@ export default function Dashboard() {
                 onChange={(e) => setCountrySearch(e.target.value)}
                 className="pl-9 h-8 text-sm"
                 data-testid="input-country-search"
+                aria-label="Search African countries"
               />
             </div>
             <div className="space-y-3">
@@ -348,6 +361,7 @@ export default function Dashboard() {
                 onChange={(e) => setCropSearch(e.target.value)}
                 className="pl-9 h-8 text-sm"
                 data-testid="input-crop-search"
+                aria-label="Search agricultural crops"
               />
             </div>
             <div className="space-y-0.5">
