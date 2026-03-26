@@ -1,0 +1,37 @@
+name: Semi-Monthly Data Refresh
+
+on:
+  schedule:
+    # Runs at 00:00 UTC on the 1st and 15th of every month
+    - cron: '0 0 1,15 * *'
+  # Allow manual triggering from the GitHub Actions tab
+  workflow_dispatch: 
+
+jobs:
+  refresh-data:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          
+      # Since the python script only uses standard libraries (csv, json, urllib, sqlite3), 
+      # we don't even need a pip install step!
+      - name: Run Data Refresh Script
+        run: python scripts/refresh-data.py
+
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: automate bi-weekly agricultural data refresh"
+          file_pattern: "server/data/live-data.json server/data/afrixplorer.db"
+          commit_user_name: "Afrixplorer Bot"
+          commit_user_email: "bot@afrixplorer.com"

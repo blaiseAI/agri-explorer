@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -484,17 +484,12 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Disclaimer */}
-      <div className="rounded-lg border border-dashed p-4 text-xs text-muted-foreground leading-relaxed">
-        This tool surfaces agricultural data signals to support research and exploration.
-        It does not constitute financial advice. Data is sourced from FAOSTAT, World Bank,
-        and UN Comtrade and refreshed periodically. Always conduct independent due diligence before making investment decisions.
-      </div>
     </div>
   );
 }
 
 function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
+  const [, setLocation] = useLocation();
   const { data: leaderboard, isLoading } = useQuery<any[]>({
     queryKey: ["/api/leaderboard"],
     queryFn: getQueryFn({ on401: "returnNull" }),
@@ -697,7 +692,7 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
                     <tr
                       key={`${e.country}-${e.crop}`}
                       className="border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => window.location.hash = `/explore/${e.country}/${e.crop}`}
+                      onClick={() => setLocation(`/explore/${e.country}/${e.crop}`)}
                     >
                       <td className="px-3 py-2 text-xs text-muted-foreground tabular-nums">{e.rank}</td>
                       <td className="px-3 py-2">

@@ -1,6 +1,5 @@
 import { Link, useLocation } from "wouter";
 import { useTheme } from "./ThemeProvider";
-import { PerplexityAttribution } from "./PerplexityAttribution";
 import { Sun, Moon, BarChart3, Globe, Wheat, Sparkles, LogIn, LogOut, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -144,16 +143,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
-      <footer className="border-t py-6 mt-auto">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-            <p>Data sources: FAOSTAT, World Bank, UN Comtrade. Not financial advice.</p>
-            <div className="flex items-center gap-4">
-              {isMonetizationEnabled && (
-                <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-              )}
-              <PerplexityAttribution />
+      <footer className="border-t mt-auto bg-muted/20">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 md:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+            {/* Branding & Disclaimer */}
+            <div className="md:col-span-3 space-y-4">
+              <div className="flex items-center gap-2.5 font-bold text-foreground">
+                <img src="/logo.png" alt="" width={22} height={22} className="object-contain scale-125" />
+                <span className="text-lg tracking-tight">Afrixplorer</span>
+              </div>
+              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                Afrixplorer surfaces agricultural data signals to support research and exploration, not to provide financial advice. While we strive to ensure our data—sourced from FAOSTAT, the World Bank, and UN Comtrade—is complete and accurate, the complex nature of processing global agricultural datasets means we cannot be held liable for any omissions or inaccuracies. Always conduct independent due diligence before making investment decisions.
+              </p>
             </div>
+
+            {/* Links & Attribution */}
+            <div className="flex flex-col gap-4 text-sm font-medium md:items-end md:text-right">
+              {isMonetizationEnabled && (
+                <Link href="/pricing" className="text-muted-foreground hover:text-primary transition-colors">
+                  Pricing
+                </Link>
+              )}
+              <span className="text-muted-foreground">Created by Blaise</span>
+            </div>
+          </div>
+          
+          <div className="mt-12 pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground/60">
+            <p>&copy; {new Date().getFullYear()} Afrixplorer. All rights reserved.</p>
+            <p>Data sources: FAOSTAT, World Bank, UN Comtrade.</p>
           </div>
         </div>
       </footer>
