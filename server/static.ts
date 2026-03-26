@@ -11,7 +11,9 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Prevent express.static from serving index.html natively 
+  // so that the catch-all route handles it and injects SEO tags.
+  app.use(express.static(distPath, { index: false }));
 
   // fall through to index.html if the file doesn't exist
   app.use("/{*path}", async (req, res, next) => {
