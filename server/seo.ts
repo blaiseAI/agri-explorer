@@ -25,6 +25,7 @@ export function injectSEO(url: string, template: string): string {
             "@type": "Place",
             "name": country.name
           },
+          "license": "https://creativecommons.org/licenses/by/4.0/",
           "creator": {
             "@type": "Organization",
             "name": "Afrixplorer"
@@ -43,6 +44,7 @@ export function injectSEO(url: string, template: string): string {
         "name": `Global ${cropName} Production Data`,
         "description": description,
         "keywords": [cropName, "Agriculture", "Yield", "Production"],
+        "license": "https://creativecommons.org/licenses/by/4.0/",
         "creator": {
           "@type": "Organization",
           "name": "Afrixplorer"
@@ -67,6 +69,7 @@ export function injectSEO(url: string, template: string): string {
             "name": country.name
           },
           "keywords": [cropName, country.name, "Agriculture", "Yield"],
+          "license": "https://creativecommons.org/licenses/by/4.0/",
           "creator": {
             "@type": "Organization",
             "name": "Afrixplorer"
