@@ -29,9 +29,15 @@ jobs:
         run: python scripts/refresh-data.py
 
       - name: Commit and Push Changes
+        id: auto-commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: automate bi-weekly agricultural data refresh"
           file_pattern: "server/data/live-data.json server/data/afrixplorer.db"
           commit_user_name: "Afrixplorer Bot"
           commit_user_email: "bot@afrixplorer.com"
+
+      - name: Trigger Coolify Redeploy
+        if: steps.auto-commit.outputs.changes_detected == 'true'
+        run: |
+          curl -X GET "${{ secrets.COOLIFY_WEBHOOK_URL }}" --fail --silent --show-error
