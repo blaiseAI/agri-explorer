@@ -40,4 +40,4 @@ jobs:
       - name: Trigger Coolify Redeploy
         if: steps.auto-commit.outputs.changes_detected == 'true'
         run: |
-          curl -X GET "${{ secrets.COOLIFY_WEBHOOK_URL }}" --fail --silent --show-error
+          curl -X GET "${{ secrets.COOLIFY_WEBHOOK_URL }}" --silent --show-error || true
