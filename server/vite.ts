@@ -50,10 +50,10 @@ export async function setupVite(server: Server, app: Express) {
       );
       const page = await vite.transformIndexHtml(url, template);
       
-      const { injectSEO } = await import("./seo");
+      const { injectSEO, isKnownRoute } = await import("./seo");
       const seoPage = injectSEO(url, page);
-      
-      res.status(200).set({ "Content-Type": "text/html" }).end(seoPage);
+      const statusCode = isKnownRoute(url) ? 200 : 404;
+      res.status(statusCode).set({ "Content-Type": "text/html" }).end(seoPage);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);

@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { injectSEO } from "./seo";
+import { injectSEO, isKnownRoute } from "./seo";
 
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");
@@ -21,7 +21,8 @@ export function serveStatic(app: Express) {
       const htmlPath = path.resolve(distPath, "index.html");
       const template = await fs.promises.readFile(htmlPath, "utf-8");
       const seoHtml = injectSEO(req.originalUrl, template);
-      res.status(200).set({ "Content-Type": "text/html" }).send(seoHtml);
+      const statusCode = isKnownRoute(req.originalUrl) ? 200 : 404;
+      res.status(statusCode).set({ "Content-Type": "text/html" }).send(seoHtml);
     } catch (err) {
       next(err);
     }
