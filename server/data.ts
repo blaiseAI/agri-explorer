@@ -134,13 +134,42 @@ export function getCropData(): Record<string, CountryCrops> {
 export function getGlobalAvgYields(): Record<string, number> {
   const c = getDb();
   if (!c) return GLOBAL_AVG_YIELDS_FALLBACK;
-  
+
   const rows = c.prepare("SELECT crop, yield_hg_ha FROM global_avg_yields").all() as any[];
   const res: Record<string, number> = {};
   for (const r of rows) {
     res[r.crop] = r.yield_hg_ha;
   }
   return res;
+}
+
+export interface GlobalRankingRow {
+  rank: number;
+  country: string;
+  code: string | null;
+  production: number;
+  yield: number;
+  area: number;
+  yoyPct: number | null;
+  year: string;
+}
+
+export function getGlobalRankings(crop: string): GlobalRankingRow[] {
+  const c = getDb();
+  if (!c) return [];
+  const rows = c.prepare(
+    "SELECT rank, country, code, production, yield, area, yoy_pct, year FROM global_crop_rankings WHERE crop = ? ORDER BY rank"
+  ).all(crop) as any[];
+  return rows.map((r) => ({
+    rank: r.rank,
+    country: r.country,
+    code: r.code,
+    production: r.production,
+    yield: r.yield,
+    area: r.area,
+    yoyPct: r.yoy_pct,
+    year: r.year,
+  }));
 }
 
 export function getWorldBankData(): Record<string, Record<string, Record<string, number | null>>> {
