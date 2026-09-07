@@ -367,6 +367,11 @@ GLOBAL_AGGREGATES = {
     "Least Developed Countries (LDCs)", "Land Locked Developing Countries (LLDCs)",
     "Small Island Developing States (SIDS)", "Low Income Food Deficit Countries (LIFDCs)",
     "Net Food Importing Developing Countries (NFIDCs)",
+    # Not a region — FAOSTAT reports "China" as a country-level aggregate summing
+    # mainland + Hong Kong SAR + Macao SAR + Taiwan, alongside "China, mainland"
+    # (the real country) as its own row. Excluding it here avoids a near-duplicate
+    # entry next to "China, mainland" in every ranking.
+    "China",
 }
 
 GLOBAL_RANKING_TOP_N = 30
@@ -397,7 +402,8 @@ def filter_and_rank_global_rows(rows, africa_countries):
             continue
         element = ELEMENTS[element_code]
 
-        key = (area_name, crop_clean)
+        display_name = FAOSTAT_NAMES.get(area_name, area_name)
+        key = (display_name, crop_clean)
         if key not in by_country_crop:
             by_country_crop[key] = {"production": {}, "yield": {}, "area": {}}
 
@@ -425,6 +431,12 @@ def filter_and_rank_global_rows(rows, africa_countries):
         prod_years = sorted(elements["production"].keys())
         if not prod_years:
             continue
+        # Skip dissolved/stale entities (e.g. USSR, Ethiopia PDR) whose "latest"
+        # data point is actually decades old — mirrors fetch_faostat_data()'s
+        # own recency guard.
+        recent = {str(y) for y in range(YEAR_END - 4, YEAR_END + 1)}
+        if not (set(prod_years) & recent):
+            continue
         latest_year = prod_years[-1]
         latest_prod = elements["production"][latest_year]
         if latest_prod <= 0:
@@ -432,7 +444,11 @@ def filter_and_rank_global_rows(rows, africa_countries):
 
         prior_year = str(int(latest_year) - 1)
         prior_prod = elements["production"].get(prior_year)
-        yoy_pct = round(((latest_prod - prior_prod) / prior_prod) * 100, 1) if prior_prod else None
+        yoy_pct = (
+            round(((latest_prod - prior_prod) / prior_prod) * 100, 1)
+            if prior_prod is not None and prior_prod != 0
+            else None
+        )
 
         africa_info = africa_countries.get(country)
         row_out = {

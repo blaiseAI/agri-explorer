@@ -14,6 +14,8 @@ spec.loader.exec_module(refresh_data)
 filter_and_rank_global_rows = refresh_data.filter_and_rank_global_rows
 RANKING_CROPS = refresh_data.RANKING_CROPS
 GLOBAL_AGGREGATES = refresh_data.GLOBAL_AGGREGATES
+FAOSTAT_NAMES = refresh_data.FAOSTAT_NAMES
+YEAR_END = refresh_data.YEAR_END
 
 
 def make_row(area, item, element_code, m49, **year_vals):
@@ -105,6 +107,47 @@ class TestFilterAndRankGlobalRows(unittest.TestCase):
         self.assertEqual(row["production"], 3200.0)   # tonnes / 1000
         self.assertEqual(row["yield"], 8500)           # kg/ha * 10 -> hg/ha
         self.assertEqual(row["area"], 3.8)             # ha / 1000
+
+    def test_excludes_china_aggregate_keeps_china_mainland(self):
+        rows = [
+            make_row("China", "Wheat", "5510", "'156", Y2024=140105000),
+            make_row("China, mainland", "Wheat", "5510", "'041", Y2024=140100000),
+        ]
+        result = filter_and_rank_global_rows(rows, africa_countries={})
+        countries = [r["country"] for r in result["Wheat"]]
+        self.assertEqual(countries, ["China, mainland"])
+
+    def test_excludes_data_entirely_outside_recency_window(self):
+        stale_year = YEAR_END - 10
+        rows = [
+            make_row("USSR", "Wheat", "5510", "'810", **{f"Y{stale_year}": 71991000}),
+        ]
+        result = filter_and_rank_global_rows(rows, africa_countries={})
+        self.assertNotIn("Wheat", result)
+
+    def test_remaps_raw_faostat_name_to_display_name_for_africa_lookup(self):
+        rows = [
+            make_row("Côte d'Ivoire", "Cocoa beans", "5510", "'384", Y2024=2200000),
+        ]
+        africa_countries = {"Ivory Coast": {"code": "CIV", "region": "West Africa"}}
+        result = filter_and_rank_global_rows(rows, africa_countries=africa_countries)
+        row = result["Cocoa"][0]
+        self.assertEqual(row["country"], "Ivory Coast")
+        self.assertEqual(row["code"], "CIV")
+
+    def test_yoy_is_none_when_prior_production_is_exactly_zero(self):
+        rows = [
+            make_row("Brazil", "Coffee, green", "5510", "'076", Y2023=0, Y2024=3300000),
+        ]
+        result = filter_and_rank_global_rows(rows, africa_countries={})
+        self.assertIsNone(result["Coffee"][0]["yoy_pct"])
+
+    def test_yoy_is_none_when_prior_production_is_missing_entirely(self):
+        rows = [
+            make_row("Brazil", "Coffee, green", "5510", "'076", Y2024=3300000),
+        ]
+        result = filter_and_rank_global_rows(rows, africa_countries={})
+        self.assertIsNone(result["Coffee"][0]["yoy_pct"])
 
 
 if __name__ == "__main__":
