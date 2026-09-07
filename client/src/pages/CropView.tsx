@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
-import { ChevronRight, TrendingUp, TrendingDown, Info, Search, ChevronDown, Download, ArrowUpDown, Filter } from "lucide-react";
+import { ChevronRight, TrendingUp, TrendingDown, Info, Search, ChevronDown, Download, ArrowUpDown, Filter, Globe } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
@@ -65,6 +65,14 @@ function YieldTooltip({ active, payload, label, globalAvg }: any) {
 }
 
 const ALL_REGIONS = ["East Africa", "West Africa", "Central Africa", "North Africa", "Southern Africa"];
+
+// Crops with a global /rankings/:crop page. Duplicated from server/seo.ts's
+// RANKING_CROPS (and scripts/refresh-data.py's) by necessity — no shared
+// module across the client/server/Python boundary. Keep in sync manually.
+const RANKING_CROPS = new Set([
+  "Coffee", "Cocoa", "Rice", "Wheat", "Sugar Cane", "Bananas", "Tea",
+  "Seed Cotton", "Maize", "Potatoes", "Olives", "Grapes", "Cassava", "Oil Palm",
+]);
 
 type SortField = "production" | "yield" | "area" | "yieldGap" | "trade" | "growth" | "revenue";
 
@@ -367,10 +375,20 @@ export default function CropView() {
 
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2" data-testid="text-crop-name">
-          <span className="text-2xl">{getCropEmoji(crop)}</span>
-          {crop}
-        </h1>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2" data-testid="text-crop-name">
+            <span className="text-2xl">{getCropEmoji(crop)}</span>
+            {crop}
+          </h1>
+          {RANKING_CROPS.has(crop) && (
+            <Link href={`/rankings/${crop}`}>
+              <span className="flex items-center gap-1.5 text-sm text-primary hover:underline cursor-pointer" data-testid="link-global-ranking">
+                <Globe size={14} />
+                See global ranking \u2192
+              </span>
+            </Link>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">
           Comparing {crop} across {sortedCountries.length} countries
           {regionFilter !== "all" && ` in ${regionFilter}`}
