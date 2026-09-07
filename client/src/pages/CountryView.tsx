@@ -85,10 +85,6 @@ export default function CountryView() {
 
   const country = params.country || topProducer || "Nigeria";
 
-  useEffect(() => {
-    document.title = `${country} Agricultural Data | Afrixplorer`;
-  }, [country]);
-
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [cropSort, setCropSort] = useState<"production" | "revenue" | "yield" | "growth">("production");
@@ -157,12 +153,17 @@ export default function CountryView() {
     }
   }, [searchOpen]);
 
-  const currentCountryInfo = countriesData?.find((c) => c.name === country);
+  const currentCountryInfo = countriesData?.find((c) => c.name === country || c.code === country);
   const currentFlag = currentCountryInfo ? FLAG_MAP[currentCountryInfo.code] || "" : "";
 
   const crops = data?.crops || [];
   const worldBank = data?.worldBank || {};
   const countryInfo = data?.countryInfo;
+
+  useEffect(() => {
+    document.title = `${countryInfo?.name || country} Agricultural Data — Crop Production, Yields & Trade | Afrixplorer`;
+  }, [country, countryInfo?.name]);
+
   const topImports = data?.topImports || [];
   const wb = worldBank;
   const latestPop = getLatestValue(wb.population);
@@ -263,7 +264,7 @@ export default function CountryView() {
                   <button
                     key={c.code}
                     onClick={() => {
-                      setLocation(`/country/${c.name}`);
+                      setLocation(`/country/${c.code}`);
                       setSearchOpen(false);
                       setSearchQuery("");
                     }}
@@ -300,7 +301,7 @@ export default function CountryView() {
       <div className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2" data-testid="text-country-name">
           <span className="text-2xl">{currentFlag}</span>
-          {country}
+          {countryInfo?.name || country}
         </h1>
         <p className="text-sm text-muted-foreground">{countryInfo?.region} — Agricultural overview</p>
       </div>
@@ -546,7 +547,7 @@ export default function CountryView() {
                 "border-orange-300/30 bg-orange-50/20 dark:bg-orange-900/10",
               ];
               return (
-                <Link key={tc.crop} href={`/explore/${country}/${tc.crop}`}>
+                <Link key={tc.crop} href={`/explore/${countryInfo?.code || country}/${tc.crop}`}>
                   <Card className={`hover:border-primary/30 transition-colors cursor-pointer h-full border ${medalColors[i] || ""}`}>
                     <CardContent className="pt-4 pb-4 space-y-2">
                       <div className="flex items-start justify-between">
@@ -624,7 +625,7 @@ export default function CountryView() {
               : null;
             const tradeYear = getLatestTradeYear(crop.tradeData);
             return (
-              <Link key={crop.name} href={`/explore/${country}/${crop.name}`}>
+              <Link key={crop.name} href={`/explore/${countryInfo?.code || country}/${crop.name}`}>
                 <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full" data-testid={`card-crop-${crop.name.toLowerCase()}`}>
                   <CardContent className="pt-4 pb-4 space-y-3">
                     <div className="flex items-center justify-between">

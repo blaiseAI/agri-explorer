@@ -77,10 +77,6 @@ export default function CropDetail() {
   const { toast } = useToast();
   const { isMonetizationEnabled } = useMonetization();
 
-  useEffect(() => {
-    document.title = `${crop} in ${country} | Afrixplorer`;
-  }, [country, crop]);
-
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/crop-data", country, crop],
     queryFn: getQueryFn({ on401: "throw" }),
@@ -102,6 +98,10 @@ export default function CropDetail() {
     queryKey: ["/api/country", country],
     queryFn: getQueryFn({ on401: "throw" }),
   });
+
+  useEffect(() => {
+    document.title = `${crop} Production in ${countryData?.countryInfo?.name || country} — Yield, Area & Trade Data | Afrixplorer`;
+  }, [crop, country, countryData?.countryInfo?.name]);
 
   // Cross-link: same crop in other countries
   const { data: cropData } = useQuery<any>({
@@ -218,7 +218,7 @@ export default function CropDetail() {
       {/* Back links + export */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <Link href={`/country/${country}`}>
+          <Link href={`/country/${countryData?.countryInfo?.code || country}`}>
             <span className="flex items-center gap-1 hover:text-foreground cursor-pointer transition-colors">
               <ArrowLeft size={14} /> {country}
             </span>
@@ -241,7 +241,7 @@ export default function CropDetail() {
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight" data-testid="text-detail-title">
-          {crop} in {country}
+          {crop} Production in {countryData?.countryInfo?.name || country}
         </h1>
         <p className="text-sm text-muted-foreground">
           {series.length > 0 ? `${series[0].year} — ${series[series.length-1].year}` : ""} performance data
@@ -447,7 +447,7 @@ export default function CropDetail() {
         <div className="space-y-3">
           <h2 className="text-sm font-medium flex items-center gap-2">
             <Lightbulb size={15} className="text-primary" />
-            Signals for {crop} in {country}
+            Signals for {crop} in {countryData?.countryInfo?.name || country}
           </h2>
           <div className="space-y-3">
             {insights.map((insight: any) => {
@@ -551,10 +551,10 @@ export default function CropDetail() {
       {otherCrops.length > 0 && (
         <Card>
           <CardContent className="pt-4 pb-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Other crops in {country}</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">Other crops in {countryData?.countryInfo?.name || country}</p>
             <div className="flex flex-wrap gap-1.5">
               {otherCrops.map((c: any) => (
-                <Link key={c.name} href={`/explore/${country}/${c.name}`}>
+                <Link key={c.name} href={`/explore/${countryData?.countryInfo?.code || country}/${c.name}`}>
                   <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer">
                     {c.name}
                     {c.revenuePerHa > 0 && <span className="text-emerald-600 dark:text-emerald-400 text-[10px]">${c.revenuePerHa.toLocaleString()}/ha</span>}
@@ -573,7 +573,7 @@ export default function CropDetail() {
             <p className="text-xs font-medium text-muted-foreground mb-2">{crop} in other countries</p>
             <div className="flex flex-wrap gap-1.5">
               {otherCountries.map((c: any) => (
-                <Link key={c.country} href={`/explore/${c.country}/${crop}`}>
+                <Link key={c.country} href={`/explore/${c.code}/${crop}`}>
                   <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer">
                     {c.country}
                     <span className="text-[10px] text-muted-foreground">{(c.latestYield || 0).toLocaleString()} hg/ha</span>
