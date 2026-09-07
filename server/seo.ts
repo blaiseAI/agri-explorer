@@ -1,5 +1,5 @@
-import { getCountries, getCrops, getYears, getMetadata } from "./data";
-import { renderExploreContent, renderCountryContent, renderCropContent } from "./content";
+import { getCountries, getCrops, getYears, getMetadata, getGlobalRankings } from "./data";
+import { renderExploreContent, renderCountryContent, renderCropContent, renderRankingsContent } from "./content";
 import { resolveCrop } from "./resolve";
 
 const SITE_URL = "https://afrixplorer.com";
@@ -68,6 +68,15 @@ function baseDatasetFields() {
 
 const STATIC_ROUTES = new Set(["/", "", "/welcome", "/pricing", "/sign-in", "/sign-up", "/countries", "/crops"]);
 
+// Duplicated from scripts/refresh-data.py's RANKING_CROPS set by necessity —
+// Python and this TypeScript codebase can't share a literal constant across
+// the language boundary. Keep the two lists in sync manually if either ever
+// changes; there's no automated check for drift.
+const RANKING_CROPS = new Set([
+  "Coffee", "Cocoa", "Rice", "Wheat", "Sugar Cane", "Bananas", "Tea",
+  "Seed Cotton", "Maize", "Potatoes", "Olives", "Grapes", "Cassava", "Oil Palm",
+]);
+
 export function isKnownRoute(url: string): boolean {
   const cleanUrl = url.split("?")[0].split("#")[0];
   if (STATIC_ROUTES.has(cleanUrl)) return true;
@@ -89,6 +98,10 @@ export function isKnownRoute(url: string): boolean {
   if (parts[0] === "explore" && parts.length === 3) {
     const id = decodeURIComponent(parts[1]).toLowerCase();
     return COUNTRIES.some((c) => c.code.toLowerCase() === id || c.name.toLowerCase() === id);
+  }
+  if (parts[0] === "rankings" && parts.length === 2) {
+    const crop = resolveCrop(parts[1]);
+    return crop !== null && RANKING_CROPS.has(crop);
   }
 
   return false;
@@ -211,6 +224,40 @@ export function injectSEO(url: string, template: string): string {
           { name: cropName, url: `/explore/${country.code}/${encodeURIComponent(cropName)}` },
         ]));
         bodyContent = renderExploreContent(country, cropName);
+      }
+    }
+    // /rankings/:cropName
+    else if (parts[0] === "rankings" && parts[1]) {
+      const cropName = resolveCrop(parts[1]);
+      if (cropName && RANKING_CROPS.has(cropName)) {
+        const rankings = getGlobalRankings(cropName);
+        title = `${cropName} Production by Country — World Ranking | Afrixplorer`;
+        description = `See which countries produce the most ${cropName} globally, with African producers ranked in context. Updated from FAOSTAT data.`;
+        if (rankings.length > 0) {
+          schemas.push({
+            "@context": "https://schema.org/",
+            "@type": "Dataset",
+            "name": `${cropName} Production by Country — World Ranking`,
+            "description": description,
+            "keywords": [cropName, "Ranking", "World Production", "Agriculture"],
+            ...baseDatasetFields(),
+          });
+          schemas.push({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "itemListElement": rankings.slice(0, 10).map((r) => ({
+              "@type": "ListItem",
+              "position": r.rank,
+              "name": r.country,
+            })),
+          });
+          schemas.push(buildBreadcrumbs([
+            { name: "Home", url: "/" },
+            { name: "Crops", url: "/crops" },
+            { name: `${cropName} Rankings`, url: `/rankings/${encodeURIComponent(cropName)}` },
+          ]));
+        }
+        bodyContent = renderRankingsContent(cropName, rankings);
       }
     }
     // /countries
