@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices, getBestPrice } from "./data";
+import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices, getBestPrice, getGlobalRankings } from "./data";
 import { generateInsights, generateDiverseInsights, generateLeaderboard, generateTopCrops, generateSimilarOpportunities } from "./insights";
+import { resolveCrop } from "./resolve";
 import { generateOGImage } from "./og";
 import Parser from "rss-parser";
 
@@ -282,6 +283,15 @@ export async function registerRoutes(
     });
   });
 
+  // Get global production rankings for a crop (top 30 countries)
+  app.get("/api/rankings/:crop", (req, res) => {
+    const crop = resolveCrop(req.params.crop);
+    if (!crop) return res.status(404).json({ error: "Crop not found" });
+    const rankings = getGlobalRankings(crop);
+    if (rankings.length === 0) return res.status(404).json({ error: "No ranking data for this crop" });
+    res.json({ crop, rankings });
+  });
+
   // Get insights
   app.get("/api/insights", (req, res) => {
     const rawCountry = req.query.country as string | undefined;
@@ -483,6 +493,16 @@ export async function registerRoutes(
           xml += `  <url>\n    <loc>${siteUrl}/explore/${c.code}/${encodedCrop}</loc>${lastmodTag}\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
         }
       }
+    });
+
+    // Rankings routes
+    const RANKING_CROPS = [
+      "Coffee", "Cocoa", "Rice", "Wheat", "Sugar Cane", "Bananas", "Tea",
+      "Seed Cotton", "Maize", "Potatoes", "Olives", "Grapes", "Cassava", "Oil Palm",
+    ];
+    RANKING_CROPS.forEach(crop => {
+      const encodedCrop = encodeURIComponent(crop);
+      xml += `  <url>\n    <loc>${siteUrl}/rankings/${encodedCrop}</loc>${lastmodTag}\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
     });
 
     xml += `</urlset>`;
