@@ -441,6 +441,8 @@ export async function registerRoutes(
     const CROP_DATA = getCropData();
     const COUNTRIES = getCountries();
     const siteUrl = "https://afrixplorer.com";
+    const lastmod = getMetadata().lastUpdated ? getMetadata().lastUpdated.substring(0, 10) : undefined;
+    const lastmodTag = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : "";
     
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
@@ -448,12 +450,12 @@ export async function registerRoutes(
     // Static routes
     const staticRoutes = ["", "/pricing", "/sign-in", "/sign-up", "/countries", "/crops", "/welcome"];
     staticRoutes.forEach(route => {
-      xml += `  <url>\n    <loc>${siteUrl}${route}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${route === "" ? "1.0" : "0.8"}</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${siteUrl}${route}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${route === "" ? "1.0" : "0.8"}</priority>${lastmodTag}\n  </url>\n`;
     });
 
     // Country routes
     COUNTRIES.forEach(c => {
-      xml += `  <url>\n    <loc>${siteUrl}/country/${c.code}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${siteUrl}/country/${c.code}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>${lastmodTag}\n  </url>\n`;
     });
 
     // Crop routes
@@ -466,7 +468,7 @@ export async function registerRoutes(
     
     crops.forEach(crop => {
       const encodedCrop = encodeURIComponent(crop);
-      xml += `  <url>\n    <loc>${siteUrl}/crop/${encodedCrop}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${siteUrl}/crop/${encodedCrop}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>${lastmodTag}\n  </url>\n`;
     });
 
     // Country+Crop specific routes
@@ -475,7 +477,7 @@ export async function registerRoutes(
       if (data) {
         for (const crop of Object.keys(data)) {
           const encodedCrop = encodeURIComponent(crop);
-          xml += `  <url>\n    <loc>${siteUrl}/explore/${c.code}/${encodedCrop}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+          xml += `  <url>\n    <loc>${siteUrl}/explore/${c.code}/${encodedCrop}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>${lastmodTag}\n  </url>\n`;
         }
       }
     });
