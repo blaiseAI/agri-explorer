@@ -1,4 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("./data", () => ({
+  getCountries: () => [
+    { name: "Nigeria", code: "NGA", region: "West Africa" },
+    { name: "Ghana", code: "GHA", region: "West Africa" },
+  ],
+  getCrops: () => ["Rice", "Sugar Cane"],
+}));
+
 import { resolveCountry, resolveCrop } from "./resolve";
 
 describe("resolveCountry", () => {
@@ -34,5 +43,9 @@ describe("resolveCrop", () => {
 
   it("returns null for an unknown crop", () => {
     expect(resolveCrop("Unobtainium")).toBeNull();
+  });
+
+  it("returns null rather than throwing on a malformed percent-encoded identifier", () => {
+    expect(resolveCrop("%")).toBeNull();
   });
 });
