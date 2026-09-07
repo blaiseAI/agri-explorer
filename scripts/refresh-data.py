@@ -261,6 +261,18 @@ CREATE TABLE world_bank_metrics (
     value REAL,
     PRIMARY KEY (country, indicator, year)
 );
+CREATE TABLE global_crop_rankings (
+    crop TEXT NOT NULL,
+    rank INTEGER NOT NULL,
+    country TEXT NOT NULL,
+    code TEXT,
+    production REAL NOT NULL,
+    yield REAL NOT NULL,
+    area REAL NOT NULL,
+    yoy_pct REAL,
+    year TEXT NOT NULL,
+    PRIMARY KEY (crop, rank)
+);
 """
 
 # ──────────────────── Helpers ────────────────────
@@ -600,6 +612,34 @@ def fetch_faostat_data():
     print(f"  ✅ {len(filtered_data)} countries, {len(all_crops)} crops")
     
     return filtered_data, countries_info, global_yields
+
+
+def fetch_global_rankings(africa_countries):
+    """Download the FAOSTAT global bulk file and return ranked global production
+    data for the RANKING_CROPS set, via filter_and_rank_global_rows()."""
+    print("\n🌍 Fetching FAOSTAT global production data (for rankings)...")
+
+    url = "https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data.zip"
+    zip_data = fetch_url(url, max_retries=3, timeout=180)
+    if not zip_data:
+        print("  ❌ Failed to download FAOSTAT global bulk data")
+        return None
+
+    print(f"  Downloaded {len(zip_data)/1024/1024:.1f} MB")
+
+    zf = zipfile.ZipFile(io.BytesIO(zip_data))
+    csv_name = "Production_Crops_Livestock_E_All_Data_NOFLAG.csv"
+
+    with zf.open(csv_name) as f:
+        content = f.read().decode("utf-8-sig")
+
+    reader = csv.DictReader(io.StringIO(content))
+    rows = list(reader)
+
+    result = filter_and_rank_global_rows(rows, africa_countries)
+    total_rows = sum(len(v) for v in result.values())
+    print(f"  ✅ {len(result)} crops ranked, {total_rows} country rows")
+    return result
 
 
 # ──────────────────── FAOSTAT Producer Prices ────────────────────
@@ -1186,7 +1226,18 @@ def main():
         print(f"  ❌ FAOSTAT error: {e}")
         crop_data, countries_info, global_avg_yields = None, None, None
         errors.append(f"FAOSTAT: {str(e)}")
-    
+
+    # 1b. Global rankings (for /rankings/{crop} pages) — depends on countries_info from step 1
+    global_rankings = None
+    try:
+        if countries_info:
+            global_rankings = fetch_global_rankings(countries_info)
+        else:
+            print("  ⚠️ Skipping global rankings — no African country data to cross-reference")
+    except Exception as e:
+        print(f"  ❌ Global rankings error: {e}")
+        errors.append(f"Global rankings: {str(e)}")
+
     # 2. World Bank
     try:
         iso3_codes = set()
@@ -1365,6 +1416,12 @@ def main():
     elif "globalAvgYields" in existing:
         output["globalAvgYields"] = existing["globalAvgYields"]
 
+    if global_rankings:
+        output["globalRankings"] = global_rankings
+    elif "globalRankings" in existing:
+        output["globalRankings"] = existing["globalRankings"]
+        print("  ⚠️ Using previous global rankings data (fetch failed)")
+
     if wb_data:
         output["worldBankData"] = wb_data
     elif "worldBankData" in existing:
@@ -1486,6 +1543,15 @@ def main():
     if "globalAvgYields" in output:
         for crop, yield_val in output["globalAvgYields"].items():
             cur.execute("INSERT INTO global_avg_yields (crop, yield_hg_ha) VALUES (?, ?)", (crop, yield_val))
+
+    # Insert global_crop_rankings
+    if "globalRankings" in output:
+        for crop, rows in output["globalRankings"].items():
+            for row in rows:
+                cur.execute(
+                    "INSERT INTO global_crop_rankings (crop, rank, country, code, production, yield, area, yoy_pct, year) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (crop, row["rank"], row["country"], row["code"], row["production"], row["yield"], row["area"], row["yoy_pct"], row["year"]),
+                )
 
     conn.commit()
     conn.close()
