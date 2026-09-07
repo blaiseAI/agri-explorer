@@ -242,7 +242,7 @@ export default function CountryView() {
           >
             <Search size={14} className="text-muted-foreground" />
             <span className="flex-1 text-left truncate">
-              {currentFlag} {country}
+              {currentFlag} {countryInfo?.name || country}
             </span>
             <ChevronDown size={14} className="text-muted-foreground" />
           </button>
@@ -581,7 +581,7 @@ export default function CountryView() {
         </div>
         
         <div className="xl:col-span-1 xl:sticky xl:top-6 self-start">
-          <NewsFeed query={`${country} agriculture investment`} limit={4} country={country} />
+          <NewsFeed query={`${countryInfo?.name || country} agriculture investment`} limit={4} country={countryInfo?.name || country} />
         </div>
       </div>
 
@@ -675,7 +675,7 @@ export default function CountryView() {
                                 </SheetTitle>
                               </SheetHeader>
                               <div className="h-[calc(100vh-80px)] overflow-y-auto pr-1 pb-8">
-                                <NewsFeed query={`${country} ${crop.name} export`} limit={8} country={country} />
+                                <NewsFeed query={`${countryInfo?.name || country} ${crop.name} export`} limit={8} country={countryInfo?.name || country} />
                               </div>
                             </SheetContent>
                           </Sheet>

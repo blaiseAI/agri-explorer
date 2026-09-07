@@ -100,8 +100,8 @@ export default function CropDetail() {
   });
 
   useEffect(() => {
-    document.title = `${crop} Production in ${countryData?.countryInfo?.name || country} — Yield, Area & Trade Data | Afrixplorer`;
-  }, [crop, country, countryData?.countryInfo?.name]);
+    document.title = `${crop} Production in ${data?.country || country} — Yield, Area & Trade Data | Afrixplorer`;
+  }, [crop, country, data?.country]);
 
   // Cross-link: same crop in other countries
   const { data: cropData } = useQuery<any>({
@@ -204,13 +204,13 @@ export default function CropDetail() {
 
     const exportData = series.map((s: any) => ({
       Year: s.year,
-      Country: country,
+      Country: data?.country || country,
       Crop: crop,
       Production_tonnes: s.production,
       Yield_hgha: s.yield,
       Area_ha: s.area,
     }));
-    downloadCSV(exportData, `${country}_${crop}_historical_data`);
+    downloadCSV(exportData, `${data?.country || country}_${crop}_historical_data`);
   }
 
   return (
@@ -220,7 +220,7 @@ export default function CropDetail() {
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <Link href={`/country/${countryData?.countryInfo?.code || country}`}>
             <span className="flex items-center gap-1 hover:text-foreground cursor-pointer transition-colors">
-              <ArrowLeft size={14} /> {country}
+              <ArrowLeft size={14} /> {data?.country || country}
             </span>
           </Link>
           <span>/</span>
@@ -241,7 +241,7 @@ export default function CropDetail() {
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight" data-testid="text-detail-title">
-          {crop} Production in {countryData?.countryInfo?.name || country}
+          {crop} Production in {data?.country || country}
         </h1>
         <p className="text-sm text-muted-foreground">
           {series.length > 0 ? `${series[0].year} — ${series[series.length-1].year}` : ""} performance data
@@ -447,7 +447,7 @@ export default function CropDetail() {
         <div className="space-y-3">
           <h2 className="text-sm font-medium flex items-center gap-2">
             <Lightbulb size={15} className="text-primary" />
-            Signals for {crop} in {countryData?.countryInfo?.name || country}
+            Signals for {crop} in {data?.country || country}
           </h2>
           <div className="space-y-3">
             {insights.map((insight: any) => {
@@ -485,7 +485,7 @@ export default function CropDetail() {
       {data?.riskFactors && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Risk Factors for {country}</CardTitle>
+            <CardTitle className="text-sm font-medium">Risk Factors for {data?.country || country}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3 text-xs">
@@ -551,7 +551,7 @@ export default function CropDetail() {
       {otherCrops.length > 0 && (
         <Card>
           <CardContent className="pt-4 pb-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Other crops in {countryData?.countryInfo?.name || country}</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">Other crops in {data?.country || country}</p>
             <div className="flex flex-wrap gap-1.5">
               {otherCrops.map((c: any) => (
                 <Link key={c.name} href={`/explore/${countryData?.countryInfo?.code || country}/${c.name}`}>
