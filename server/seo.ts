@@ -1,4 +1,5 @@
 import { getCountries, getCrops, getYears, getMetadata } from "./data";
+import { renderExploreContent, renderCountryContent, renderCropContent } from "./content";
 
 const SITE_URL = "https://afrixplorer.com";
 
@@ -91,6 +92,7 @@ export function injectSEO(url: string, template: string): string {
   let title = "African Agricultural Data & Investment Intelligence | Afrixplorer";
   let description = "Explore crop production, yield trends, trade data, and investment opportunities across 54 African countries and 136 crops. Powered by FAO and World Bank data.";
   let schemas: any[] = [];
+  let bodyContent = "";
 
   try {
     const parts = url.split("?")[0].split("/").filter(Boolean);
@@ -142,6 +144,7 @@ export function injectSEO(url: string, template: string): string {
           { name: "Countries", url: "/countries" },
           { name: country.name, url: `/country/${country.code}` },
         ]));
+        bodyContent = renderCountryContent(country);
       }
     }
     // /crop/:cropName
@@ -168,6 +171,7 @@ export function injectSEO(url: string, template: string): string {
         { name: "Crops", url: "/crops" },
         { name: cropName, url: `/crop/${encodeURIComponent(cropName)}` },
       ]));
+      bodyContent = renderCropContent(cropName);
     }
     // /explore/:countryId/:cropName
     else if (parts[0] === "explore" && parts.length >= 3) {
@@ -195,6 +199,7 @@ export function injectSEO(url: string, template: string): string {
           { name: country.name, url: `/country/${country.code}` },
           { name: cropName, url: `/explore/${country.code}/${encodeURIComponent(cropName)}` },
         ]));
+        bodyContent = renderExploreContent(country, cropName);
       }
     }
     // /countries
@@ -309,6 +314,10 @@ export function injectSEO(url: string, template: string): string {
       "</head>",
       `${schemaBlocks}\n  </head>`
     );
+  }
+
+  if (bodyContent) {
+    html = html.replace('<div id="root"></div>', `<div id="root">${bodyContent}</div>`);
   }
 
   return html;
