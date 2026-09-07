@@ -384,7 +384,7 @@ export default function CropView() {
             <Link href={`/rankings/${crop}`}>
               <span className="flex items-center gap-1.5 text-sm text-primary hover:underline cursor-pointer" data-testid="link-global-ranking">
                 <Globe size={14} />
-                See global ranking \u2192
+                See global ranking →
               </span>
             </Link>
           )}
