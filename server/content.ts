@@ -1,4 +1,4 @@
-import { getCropData, getYears, getGlobalAvgYields, getMetadata } from "./data";
+import { getCropData, getYears, getGlobalAvgYields, getMetadata, type GlobalRankingRow } from "./data";
 import { resolveCountry, type ResolvedCountry } from "./resolve";
 
 interface YearRow {
@@ -90,6 +90,45 @@ export function renderCountryContent(country: ResolvedCountry): string {
       <tbody>${rows}</tbody>
     </table>
     <p>Source: FAOSTAT and World Bank, via Afrixplorer. Last updated ${lastUpdatedDate()}.</p>
+  `;
+}
+
+/** Renders the static fallback body content for a /rankings/:crop page. */
+export function renderRankingsContent(crop: string, rows: GlobalRankingRow[]): string {
+  if (rows.length === 0) return "";
+
+  const top = rows[0];
+  const africanRows = rows.filter((r) => r.code !== null);
+
+  const worldRows = rows
+    .map((r) => {
+      const countryCell = r.code
+        ? `<a href="/country/${r.code}">${r.country}</a>`
+        : r.country;
+      const yoy = r.yoyPct !== null ? `${r.yoyPct > 0 ? "+" : ""}${r.yoyPct}%` : "—";
+      return `<tr><td>${r.rank}</td><td>${countryCell}</td><td>${r.production.toLocaleString()}</td><td>${r.yield.toLocaleString()}</td><td>${r.area.toLocaleString()}</td><td>${yoy}</td></tr>`;
+    })
+    .join("");
+
+  const africaSection = africanRows.length > 0
+    ? `
+    <h2>${crop} in Africa</h2>
+    <p>${africanRows.length} African ${africanRows.length === 1 ? "country ranks" : "countries rank"} in the global top ${rows.length}: ${africanRows.map((r) => `${r.country} (#${r.rank})`).join(", ")}.</p>
+    <table>
+      <thead><tr><th>Rank</th><th>Country</th><th>Production (K tonnes)</th></tr></thead>
+      <tbody>${africanRows.map((r) => `<tr><td>${r.rank}</td><td><a href="/explore/${r.code}/${encodeURIComponent(crop)}">${r.country}</a></td><td>${r.production.toLocaleString()}</td></tr>`).join("")}</tbody>
+    </table>
+    `
+    : `<p>No African country appears in the global top ${rows.length} for ${crop} in this dataset.</p>`;
+
+  return `
+    <h1>${crop} Production by Country — World Ranking</h1>
+    <p>${top.country} is the world's largest ${crop} producer, at ${top.production.toLocaleString()} thousand tonnes in ${top.year}${rows.length > 1 ? `, followed by ${rows[1].country}${rows.length > 2 ? ` and ${rows[2].country}` : ""}` : ""}.</p>
+    <table>
+      <thead><tr><th>Rank</th><th>Country</th><th>Production (K tonnes)</th><th>Yield (hg/ha)</th><th>Area (K ha)</th><th>YoY</th></tr></thead>
+      <tbody>${worldRows}</tbody>
+    </table>
+    ${africaSection}
   `;
 }
 
