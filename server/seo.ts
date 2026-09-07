@@ -1,5 +1,6 @@
 import { getCountries, getCrops, getYears, getMetadata } from "./data";
 import { renderExploreContent, renderCountryContent, renderCropContent } from "./content";
+import { resolveCrop } from "./resolve";
 
 const SITE_URL = "https://afrixplorer.com";
 
@@ -149,36 +150,38 @@ export function injectSEO(url: string, template: string): string {
     }
     // /crop/:cropName
     else if (parts[0] === "crop" && parts[1]) {
-      const cropName = decodeURIComponent(parts[1]);
-      title = `${cropName} Production Data Across Africa — Yields, Trade & Trends | Afrixplorer`;
-      description = `Analyze ${cropName} production volumes, yield trends, and trade data across 54 African countries. Historical data from 2010-2024.`;
-      schemas.push({
-        "@context": "https://schema.org/",
-        "@type": "Dataset",
-        "name": `${cropName} Production Data Across Africa`,
-        "description": description,
-        "keywords": [cropName, "Agriculture", "Yield", "Production", "Africa", "Trade"],
-        ...baseDatasetFields(),
-        "variableMeasured": [
-          "Crop Production (tonnes)",
-          "Crop Yield (hg/ha)",
-          "Area Harvested (ha)",
-          "Export Trade Value (USD)",
-        ],
-      });
-      schemas.push(buildBreadcrumbs([
-        { name: "Home", url: "/" },
-        { name: "Crops", url: "/crops" },
-        { name: cropName, url: `/crop/${encodeURIComponent(cropName)}` },
-      ]));
-      bodyContent = renderCropContent(cropName);
+      const cropName = resolveCrop(parts[1]);
+      if (cropName) {
+        title = `${cropName} Production Data Across Africa — Yields, Trade & Trends | Afrixplorer`;
+        description = `Analyze ${cropName} production volumes, yield trends, and trade data across 54 African countries. Historical data from 2010-2024.`;
+        schemas.push({
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "name": `${cropName} Production Data Across Africa`,
+          "description": description,
+          "keywords": [cropName, "Agriculture", "Yield", "Production", "Africa", "Trade"],
+          ...baseDatasetFields(),
+          "variableMeasured": [
+            "Crop Production (tonnes)",
+            "Crop Yield (hg/ha)",
+            "Area Harvested (ha)",
+            "Export Trade Value (USD)",
+          ],
+        });
+        schemas.push(buildBreadcrumbs([
+          { name: "Home", url: "/" },
+          { name: "Crops", url: "/crops" },
+          { name: cropName, url: `/crop/${encodeURIComponent(cropName)}` },
+        ]));
+        bodyContent = renderCropContent(cropName);
+      }
     }
     // /explore/:countryId/:cropName
     else if (parts[0] === "explore" && parts.length >= 3) {
       const countryId = decodeURIComponent(parts[1]).toLowerCase();
-      const cropName = decodeURIComponent(parts[2]);
+      const cropName = resolveCrop(parts[2]);
       const country = COUNTRIES.find((c) => c.code.toLowerCase() === countryId || c.name.toLowerCase() === countryId);
-      if (country) {
+      if (country && cropName) {
         title = `${cropName} Production in ${country.name} — Yield, Area & Trade Data | Afrixplorer`;
         description = `Deep-dive into ${cropName} production volume, yield metrics, area harvested, and trade data in ${country.name}. Historical trends from 2010-2024.`;
         schemas.push({
