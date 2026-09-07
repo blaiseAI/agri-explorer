@@ -349,6 +349,112 @@ def clean_crop_name(name):
     }
     return replacements.get(name, name)
 
+# ──────────────────── Global Rankings ────────────────────
+
+RANKING_CROPS = {
+    "Coffee", "Cocoa", "Rice", "Wheat", "Sugar Cane", "Bananas", "Tea",
+    "Seed Cotton", "Maize", "Potatoes", "Olives", "Grapes", "Cassava", "Oil Palm",
+}
+
+GLOBAL_AGGREGATES = {
+    "World", "Africa", "Eastern Africa", "Western Africa", "Northern Africa",
+    "Southern Africa", "Middle Africa",
+    "Americas", "Northern America", "Central America", "South America", "Caribbean",
+    "Asia", "Eastern Asia", "South-eastern Asia", "Southern Asia", "Western Asia", "Central Asia",
+    "Europe", "Eastern Europe", "Northern Europe", "Southern Europe", "Western Europe",
+    "Oceania", "Australia and New Zealand", "Melanesia", "Micronesia", "Polynesia",
+    "European Union (27)",
+    "Least Developed Countries (LDCs)", "Land Locked Developing Countries (LLDCs)",
+    "Small Island Developing States (SIDS)", "Low Income Food Deficit Countries (LIFDCs)",
+    "Net Food Importing Developing Countries (NFIDCs)",
+}
+
+GLOBAL_RANKING_TOP_N = 30
+
+
+def filter_and_rank_global_rows(rows, africa_countries):
+    """Pure function: takes csv.DictReader-shaped rows (already read into a list),
+    returns {crop_clean_name: [ranked row dicts]} for the RANKING_CROPS set only.
+
+    `africa_countries` is the `countries_info` dict already produced by
+    fetch_faostat_data() for the same run — {display_name: {"code": iso3, "region": ...}}
+    — used to attach an ISO3 code to rows for countries this site already has pages for.
+    """
+    by_country_crop = {}  # (country, crop) -> {"production": {year: val}, "yield": {...}, "area": {...}}
+
+    for row in rows:
+        area_name = row.get("Area", "").strip()
+        if area_name in GLOBAL_AGGREGATES:
+            continue
+
+        item_name = row.get("Item", "").strip()
+        crop_clean = clean_crop_name(item_name)
+        if crop_clean not in RANKING_CROPS:
+            continue
+
+        element_code = row.get("Element Code", "").strip()
+        if element_code not in ELEMENTS:
+            continue
+        element = ELEMENTS[element_code]
+
+        key = (area_name, crop_clean)
+        if key not in by_country_crop:
+            by_country_crop[key] = {"production": {}, "yield": {}, "area": {}}
+
+        for col, val_str in row.items():
+            if not col.startswith("Y") or not col[1:].isdigit():
+                continue
+            val_str = (val_str or "").strip()
+            if not val_str:
+                continue
+            try:
+                val = float(val_str)
+            except ValueError:
+                continue
+            year = col[1:]
+            if element == "production":
+                by_country_crop[key]["production"][year] = round(val / 1000, 1)
+            elif element == "yield":
+                by_country_crop[key]["yield"][year] = round(val * 10)
+            elif element == "area":
+                by_country_crop[key]["area"][year] = round(val / 1000, 1)
+
+    # Group by crop, compute latest year + YoY, rank by latest production
+    by_crop = {}
+    for (country, crop), elements in by_country_crop.items():
+        prod_years = sorted(elements["production"].keys())
+        if not prod_years:
+            continue
+        latest_year = prod_years[-1]
+        latest_prod = elements["production"][latest_year]
+        if latest_prod <= 0:
+            continue
+
+        prior_year = str(int(latest_year) - 1)
+        prior_prod = elements["production"].get(prior_year)
+        yoy_pct = round(((latest_prod - prior_prod) / prior_prod) * 100, 1) if prior_prod else None
+
+        africa_info = africa_countries.get(country)
+        row_out = {
+            "country": country,
+            "code": africa_info["code"] if africa_info else None,
+            "production": latest_prod,
+            "yield": elements["yield"].get(latest_year, 0),
+            "area": elements["area"].get(latest_year, 0),
+            "yoy_pct": yoy_pct,
+            "year": latest_year,
+        }
+        by_crop.setdefault(crop, []).append(row_out)
+
+    for crop, country_rows in by_crop.items():
+        country_rows.sort(key=lambda r: r["production"], reverse=True)
+        top = country_rows[:GLOBAL_RANKING_TOP_N]
+        for i, r in enumerate(top):
+            r["rank"] = i + 1
+        by_crop[crop] = top
+
+    return by_crop
+
 # ──────────────────── FAOSTAT ────────────────────
 
 def fetch_faostat_data():
