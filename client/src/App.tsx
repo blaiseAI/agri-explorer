@@ -13,6 +13,7 @@ const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const CountryView = lazy(() => import("@/pages/CountryView"));
 const CropView = lazy(() => import("@/pages/CropView"));
 const CropDetail = lazy(() => import("@/pages/CropDetail"));
+const RankingsView = lazy(() => import("@/pages/RankingsView"));
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const PricingPage = lazy(() => import("@/pages/PricingPage"));
 const SignInPage = lazy(() => import("@/pages/SignInPage"));
@@ -33,6 +34,7 @@ function AppRouter() {
           <Route path="/country/:country" component={CountryView} />
           <Route path="/crops" component={CropView} />
           <Route path="/crop/:crop" component={CropView} />
+          <Route path="/rankings/:crop" component={RankingsView} />
           <Route path="/explore/:country/:crop" component={CropDetail} />
           <Route component={NotFound} />
         </Switch>
