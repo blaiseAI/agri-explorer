@@ -36,6 +36,14 @@ export function canonicalRedirect(req: Request, res: Response, next: NextFunctio
         );
       }
     }
+  } else if (parts[0] === "rankings" && parts.length === 2) {
+    const canonical = resolveCrop(parts[1]);
+    if (canonical) {
+      const decoded = decodeURIComponent(parts[1]);
+      if (decoded !== canonical) {
+        return res.redirect(301, `/rankings/${encodeURIComponent(canonical)}${req.url.slice(path.length)}`);
+      }
+    }
   }
 
   next();
