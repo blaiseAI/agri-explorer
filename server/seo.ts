@@ -19,6 +19,14 @@ function buildBreadcrumbs(crumbs: Array<{ name: string; url: string }>) {
   };
 }
 
+function escapeHtmlAttr(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function getTemporalCoverage(): string {
   const years = getYears();
   if (years.length === 0) return "2010/2024";
@@ -259,9 +267,10 @@ export function injectSEO(url: string, template: string): string {
   );
 
   const canonicalUrl = `${SITE_URL}${url.split("?")[0]}`;
+  const safeCanonicalUrl = escapeHtmlAttr(canonicalUrl);
   html = html.replace(
     /<meta property="og:url" content="[^"]*">/,
-    `<meta property="og:url" content="${canonicalUrl}">`
+    `<meta property="og:url" content="${safeCanonicalUrl}">`
   );
 
   // Extract country info for OG image
@@ -305,7 +314,7 @@ export function injectSEO(url: string, template: string): string {
   // Inject canonical tag
   html = html.replace(
     "</head>",
-    `  <link rel="canonical" href="${canonicalUrl}" />\n  </head>`
+    `  <link rel="canonical" href="${safeCanonicalUrl}" />\n  </head>`
   );
 
   // Inject JSON-LD schemas
