@@ -6,6 +6,7 @@ export interface Insight {
   title: string;
   description: string;
   country: string;
+  code?: string;
   region?: string;
   crop?: string;
   score: number;
@@ -41,8 +42,10 @@ export function generateInsights(country?: string, crop?: string): Insight[] {
   const CROPS = getCrops();
 
   const countryLookup: Record<string, string> = {};
+  const countryCodeLookup: Record<string, string> = {};
   for (const c of COUNTRIES) {
     countryLookup[c.name] = c.region;
+    countryCodeLookup[c.name] = c.code;
   }
 
   const countryList = country ? [country] : COUNTRIES.map((c: { name: string }) => c.name);
@@ -222,8 +225,10 @@ export function generateInsights(country?: string, crop?: string): Insight[] {
     }
   }
 
-  // Sort by score descending
-  return insights.sort((a, b) => b.score - a.score);
+  // Sort by score descending, attach the ISO3 code for canonical link-building
+  return insights
+    .map((ins) => ({ ...ins, code: countryCodeLookup[ins.country] }))
+    .sort((a, b) => b.score - a.score);
 }
 
 /**
@@ -311,6 +316,7 @@ export function generateDiverseInsights(limit: number = 6): Insight[] {
 export interface LeaderboardEntry {
   rank: number;
   country: string;
+  code: string;
   region: string;
   crop: string;
   signalType: string;
@@ -333,7 +339,11 @@ export function generateLeaderboard(): LeaderboardEntry[] {
   const COUNTRIES = getCountries();
 
   const regionMap: Record<string, string> = {};
-  for (const c of COUNTRIES) regionMap[c.name] = c.region;
+  const codeMap: Record<string, string> = {};
+  for (const c of COUNTRIES) {
+    regionMap[c.name] = c.region;
+    codeMap[c.name] = c.code;
+  }
 
   // Filter: crop-specific only, no warnings, no generics
   const filtered = all.filter(ins =>
@@ -445,6 +455,7 @@ export function generateLeaderboard(): LeaderboardEntry[] {
     return {
       rank: 0,
       country,
+      code: codeMap[country] || '',
       region: ins.region || regionMap[country] || '',
       crop,
       signalType: ins.type,
@@ -681,6 +692,7 @@ export function generateTopCrops(country: string): TopCrop[] {
 
 export interface SimilarOpportunity {
   country: string;
+  code: string;
   crop: string;
   reason: string;
   score: number;
@@ -695,7 +707,11 @@ export function generateSimilarOpportunities(country: string, crop: string): Sim
   const GLOBAL_AVG_YIELDS = getGlobalAvgYields();
 
   const regionMap: Record<string, string> = {};
-  for (const c of COUNTRIES) regionMap[c.name] = c.region;
+  const codeMap: Record<string, string> = {};
+  for (const c of COUNTRIES) {
+    regionMap[c.name] = c.region;
+    codeMap[c.name] = c.code;
+  }
   const currentRegion = regionMap[country] || '';
 
   // Only crop-specific, no warnings, no generics, not the current one
@@ -740,7 +756,7 @@ export function generateSimilarOpportunities(country: string, crop: string): Sim
       if (pv.length >= 2) prodGrowth = +calcCAGR(pv[0][1], pv[pv.length - 1][1], pv.length - 1).toFixed(1);
     }
 
-    results.push({ country: ins.country, crop: ins.crop!, reason, score: ins.score, revenuePerHa, prodGrowth });
+    results.push({ country: ins.country, code: codeMap[ins.country] || '', crop: ins.crop!, reason, score: ins.score, revenuePerHa, prodGrowth });
     return true;
   }
 

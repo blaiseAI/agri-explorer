@@ -420,7 +420,7 @@ export default function Dashboard() {
           {topInsights?.slice(0, 3).map((insight: any) => {
             const Icon = INSIGHT_ICONS[insight.type] || Lightbulb;
             return (
-              <Link key={insight.id} href={insight.crop ? `/explore/${insight.country}/${insight.crop}` : `/country/${insight.country}`}>
+              <Link key={insight.id} href={insight.crop ? `/explore/${insight.code}/${insight.crop}` : `/country/${insight.code}`}>
                 <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full" data-testid={`card-insight-${insight.id}`}>
                   <CardContent className="pt-4 pb-4 space-y-2.5">
                     <div className="flex items-start justify-between gap-2">
@@ -691,7 +691,7 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
                     <tr
                       key={`${e.country}-${e.crop}`}
                       className="border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => setLocation(`/explore/${e.country}/${e.crop}`)}
+                      onClick={() => setLocation(`/explore/${e.code}/${e.crop}`)}
                     >
                       <td className="px-3 py-2 text-xs text-muted-foreground tabular-nums">{e.rank}</td>
                       <td className="px-3 py-2">

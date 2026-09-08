@@ -595,7 +595,7 @@ export default function CropDetail() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {similarOps.map((op: any) => (
-              <Link key={`${op.country}-${op.crop}`} href={`/explore/${op.country}/${op.crop}`}>
+              <Link key={`${op.country}-${op.crop}`} href={`/explore/${op.code}/${op.crop}`}>
                 <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full">
                   <CardContent className="pt-4 pb-4 space-y-2">
                     <div className="flex items-start justify-between">
