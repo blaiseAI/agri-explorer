@@ -2,6 +2,20 @@ import type { Request, Response, NextFunction } from "express";
 import { resolveCountry, resolveCrop } from "./resolve";
 
 /**
+ * 301-redirects the www subdomain to the apex domain. Both hosts otherwise
+ * serve the site independently (canonical tags point to the apex, but that's
+ * a weaker signal than an actual redirect and doubles crawl budget spent on
+ * the same content). Runs before everything else so it's cheap and applies
+ * site-wide, not just to the country/crop/explore/rankings routes below.
+ */
+export function wwwRedirect(req: Request, res: Response, next: NextFunction) {
+  if (req.hostname === "www.afrixplorer.com") {
+    return res.redirect(301, `https://afrixplorer.com${req.originalUrl}`);
+  }
+  next();
+}
+
+/**
  * 301-redirects non-canonical country/crop identifiers to their canonical form
  * (ISO3 code for countries, exact stored casing for crops) before the request
  * reaches SEO injection or the SPA catch-all. Unknown identifiers fall through

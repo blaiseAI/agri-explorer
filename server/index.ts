@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import helmet from "helmet";
-import { canonicalRedirect } from "./redirects";
+import { canonicalRedirect, wwwRedirect } from "./redirects";
 
 const app = express();
 const httpServer = createServer(app);
@@ -13,6 +13,8 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+app.use(wwwRedirect);
 
 app.use(
   express.json({
