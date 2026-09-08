@@ -35,7 +35,7 @@ export default function PrivacyPage() {
         <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
           <li>To create and maintain your account and authenticate you when you sign in</li>
           <li>To understand aggregate usage patterns and improve the Service</li>
-          <li>To respond to support requests sent to hello@afrixplorer.io</li>
+          <li>To respond to support requests sent to afrixplorerbiz@gmail.com</li>
           <li>To send account-related communications (e.g. password resets) — we do not send marketing email unless you separately opt in</li>
         </ul>
       </section>
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
         <h2 className="text-sm font-semibold">5. Data Retention</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
           We retain account data for as long as your account is active. You can request deletion of your account and
-          associated personal data at any time by emailing hello@afrixplorer.io.
+          associated personal data at any time by emailing afrixplorerbiz@gmail.com.
         </p>
       </section>
 
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
         <h2 className="text-sm font-semibold">6. Your Rights</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
           You may request access to, correction of, or deletion of your personal data by contacting
-          hello@afrixplorer.io. Under Canada's PIPEDA, you have the right to know what personal information we hold
+          afrixplorerbiz@gmail.com. Under Canada's PIPEDA, you have the right to know what personal information we hold
           about you and to request its correction. Depending on your own jurisdiction, you may have additional
           rights (e.g. data portability, objection to processing) under laws such as GDPR or CCPA.
         </p>
@@ -100,7 +100,7 @@ export default function PrivacyPage() {
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">9. Contact</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Questions about this Privacy Policy or your data: <a href="mailto:hello@afrixplorer.io" className="text-primary hover:underline">hello@afrixplorer.io</a>
+          Questions about this Privacy Policy or your data: <a href="mailto:afrixplorerbiz@gmail.com" className="text-primary hover:underline">afrixplorerbiz@gmail.com</a>
         </p>
       </section>
     </div>

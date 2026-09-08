@@ -73,9 +73,9 @@ export default function AboutPage() {
         <p className="text-sm leading-relaxed text-muted-foreground">
           Afrixplorer is built and maintained by Blaise Sebagabo.
         </p>
-        <a href="mailto:hello@afrixplorer.io" className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
+        <a href="mailto:afrixplorerbiz@gmail.com" className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
           <Mail size={14} />
-          hello@afrixplorer.io
+          afrixplorerbiz@gmail.com
         </a>
       </section>
     </div>

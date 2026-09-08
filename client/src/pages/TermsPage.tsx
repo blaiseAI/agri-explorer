@@ -51,7 +51,7 @@ export default function TermsPage() {
         <p className="text-sm leading-relaxed text-muted-foreground">
           Some features require creating an account. You agree to provide accurate information and to keep your
           login credentials confidential. You are responsible for all activity under your account. Notify us
-          immediately at hello@afrixplorer.io if you suspect unauthorized access.
+          immediately at afrixplorerbiz@gmail.com if you suspect unauthorized access.
         </p>
       </section>
 
@@ -116,7 +116,7 @@ export default function TermsPage() {
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">10. Contact</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Questions about these Terms: <a href="mailto:hello@afrixplorer.io" className="text-primary hover:underline">hello@afrixplorer.io</a>
+          Questions about these Terms: <a href="mailto:afrixplorerbiz@gmail.com" className="text-primary hover:underline">afrixplorerbiz@gmail.com</a>
         </p>
       </section>
     </div>

@@ -97,7 +97,7 @@ export default function PricingPage() {
   const handleSubscribe = (plan: string) => {
     if (plan === "Free") return;
     if (plan === "Enterprise") {
-      window.location.href = "mailto:hello@afrixplorer.io?subject=Enterprise%20Inquiry";
+      window.location.href = "mailto:afrixplorerbiz@gmail.com?subject=Enterprise%20Inquiry";
       return;
     }
     toast({
