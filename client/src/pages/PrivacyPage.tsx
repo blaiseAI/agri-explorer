@@ -17,9 +17,9 @@ export default function PrivacyPage() {
         <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
         <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
           This document is a general-purpose template describing current data practices and has not been reviewed by
-          a lawyer for compliance with a specific privacy regulation (e.g. GDPR, CCPA). If you operate in or serve
-          users in a jurisdiction with specific requirements, have this reviewed by qualified counsel before relying
-          on it.
+          a lawyer. The operator is based in Alberta, Canada, so Canada's federal privacy law (PIPEDA) is the primary
+          relevant framework, alongside GDPR/CCPA for users in the EU or California. Have this reviewed by qualified
+          counsel before relying on it.
         </p>
       </div>
 
@@ -75,8 +75,9 @@ export default function PrivacyPage() {
         <h2 className="text-sm font-semibold">6. Your Rights</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
           You may request access to, correction of, or deletion of your personal data by contacting
-          hello@afrixplorer.io. Depending on your jurisdiction, you may have additional rights (e.g. data
-          portability, objection to processing) under laws such as GDPR or CCPA.
+          hello@afrixplorer.io. Under Canada's PIPEDA, you have the right to know what personal information we hold
+          about you and to request its correction. Depending on your own jurisdiction, you may have additional
+          rights (e.g. data portability, objection to processing) under laws such as GDPR or CCPA.
         </p>
       </section>
 

@@ -16,10 +16,9 @@ export default function TermsPage() {
       <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
         <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
         <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
-          This document is a general-purpose template and has not been reviewed by a lawyer. It has not been
-          finalized for a specific governing jurisdiction (see Section 9). Do not rely on it as a complete legal
-          agreement without independent legal review appropriate to where you operate and where your users are
-          located.
+          This document is a general-purpose template and has not been reviewed by a lawyer. Do not rely on it as a
+          complete legal agreement without independent legal review for compliance with Alberta and Canadian law
+          (including federal privacy and consumer protection requirements).
         </p>
       </div>
 
@@ -109,9 +108,8 @@ export default function TermsPage() {
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">9. Governing Law</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          [JURISDICTION — to be specified]. These Terms should be interpreted under the laws of the jurisdiction
-          where the operator is legally established, without regard to conflict-of-law principles. This section is a
-          placeholder and should be completed based on where the Service is actually operated from.
+          These Terms are governed by the laws of the Province of Alberta and the federal laws of Canada applicable
+          therein, without regard to conflict-of-law principles.
         </p>
       </section>
 
