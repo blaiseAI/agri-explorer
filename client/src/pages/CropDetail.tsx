@@ -11,7 +11,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, BarChart, Bar, ReferenceLine,
 } from "recharts";
-import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb, Download, Sparkles, Zap, AlertTriangle, Ship, DollarSign, ChevronRight, Compass } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb, Download, Sparkles, Zap, AlertTriangle, Ship, DollarSign, ChevronRight, Compass, Code2, Check } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
@@ -76,6 +76,8 @@ export default function CropDetail() {
   const crop = params.crop || "Maize";
   const { toast } = useToast();
   const { isMonetizationEnabled } = useMonetization();
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedCopied, setEmbedCopied] = useState(false);
 
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/crop-data", country, crop],
@@ -213,6 +215,23 @@ export default function CropDetail() {
     downloadCSV(exportData, `${data?.country || country}_${crop}_historical_data`);
   }
 
+  const embedCountryCode = countryData?.countryInfo?.code || country;
+  // The copyable snippet always points at the real production domain (it needs to
+  // work when pasted onto someone else's site), but the live preview below uses the
+  // current origin so it actually renders while testing locally or on a staging host.
+  const embedImagePath = `/api/embed/chart?country=${embedCountryCode}&crop=${encodeURIComponent(crop)}&metric=production`;
+  const embedPagePath = `/explore/${embedCountryCode}/${encodeURIComponent(crop)}`;
+  const embedPreviewImageUrl = `${window.location.origin}${embedImagePath}`;
+  const embedImageUrl = `https://afrixplorer.com${embedImagePath}`;
+  const embedPageUrl = `https://afrixplorer.com${embedPagePath}`;
+  const embedHtml = `<a href="${embedPageUrl}"><img src="${embedImageUrl}" alt="${crop} production in ${data?.country || country} — chart by Afrixplorer" width="800" height="480" /></a>`;
+
+  function handleCopyEmbed() {
+    navigator.clipboard.writeText(embedHtml);
+    setEmbedCopied(true);
+    setTimeout(() => setEmbedCopied(false), 2000);
+  }
+
   return (
     <div className="space-y-6">
       {/* Back links + export */}
@@ -228,15 +247,57 @@ export default function CropDetail() {
             <span className="hover:text-foreground cursor-pointer transition-colors">{crop}</span>
           </Link>
         </div>
-        <button
-          onClick={handleExport}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card text-sm hover:border-primary/30 transition-colors"
-          data-testid="export-csv"
-        >
-          <Download size={13} />
-          <span>Export CSV</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setEmbedOpen((v) => !v)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card text-sm hover:border-primary/30 transition-colors"
+            data-testid="embed-chart"
+          >
+            <Code2 size={13} />
+            <span>Embed Chart</span>
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card text-sm hover:border-primary/30 transition-colors"
+            data-testid="export-csv"
+          >
+            <Download size={13} />
+            <span>Export CSV</span>
+          </button>
+        </div>
       </div>
+
+      {embedOpen && (
+        <Card data-testid="embed-panel">
+          <CardContent className="pt-4 pb-4 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Paste this snippet on your site or blog to embed this chart — it stays up to date automatically and links back here.
+            </p>
+            <img
+              src={embedPreviewImageUrl}
+              alt={`${crop} production in ${data?.country || country} chart preview`}
+              className="w-full max-w-md rounded border"
+            />
+            <div className="flex items-start gap-2">
+              <textarea
+                readOnly
+                value={embedHtml}
+                onFocus={(e) => e.target.select()}
+                className="flex-1 h-20 text-xs font-mono p-2 rounded border bg-muted/30 resize-none"
+                data-testid="embed-snippet"
+              />
+              <button
+                onClick={handleCopyEmbed}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border bg-card text-xs whitespace-nowrap hover:border-primary/30 transition-colors"
+                data-testid="embed-copy"
+              >
+                {embedCopied ? <Check size={12} className="text-emerald-500" /> : <Code2 size={12} />}
+                {embedCopied ? "Copied" : "Copy"}
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Header */}
       <div className="space-y-1">

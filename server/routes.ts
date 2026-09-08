@@ -4,6 +4,7 @@ import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAv
 import { generateInsights, generateDiverseInsights, generateLeaderboard, generateTopCrops, generateSimilarOpportunities } from "./insights";
 import { resolveCrop } from "./resolve";
 import { generateOGImage } from "./og";
+import { generateEmbedChart } from "./embed";
 import Parser from "rss-parser";
 
 const parser = new Parser({
@@ -50,6 +51,9 @@ export async function registerRoutes(
 
   // Serve custom dynamic Open Graph thumbnails
   app.get("/api/og", generateOGImage);
+
+  // Publicly embeddable static chart image (backlink-generating embed feature)
+  app.get("/api/embed/chart", generateEmbedChart);
 
   // Get crop data for a specific country and crop
   app.get("/api/crop-data/:country/:crop", (req, res) => {
