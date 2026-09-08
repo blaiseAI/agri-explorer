@@ -193,12 +193,11 @@ export default function Dashboard() {
       {/* Hero */}
       <div className="space-y-2">
         <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">
-          Agricultural Investment Explorer
+          Crop Production Data for {countriesCount} African Countries
         </h1>
         <p className="text-sm text-muted-foreground max-w-2xl">
-          Discover agricultural opportunities across {countriesCount} African countries.
-          Explore production trends, yield gaps, and trade signals for {cropsCount} major crops
-          spanning {yearsRange}.
+          Historical production, yield, and trade data for {cropsCount} crops, sourced from FAOSTAT and the World Bank.
+          Explore production trends, yield gaps, and trade signals spanning {yearsRange}.
         </p>
       </div>
 
@@ -273,7 +272,7 @@ export default function Dashboard() {
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 px-1">{region}</p>
                   <div className="space-y-0.5">
                     {countriesByRegion[region].map((c) => (
-                      <Link key={c.name} href={`/country/${c.name}`}>
+                      <Link key={c.name} href={`/country/${c.code}`}>
                         <div
                           className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer group"
                           data-testid={`link-country-${c.code}`}
@@ -304,7 +303,7 @@ export default function Dashboard() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 px-1">{region}</p>
                     <div className="space-y-0.5">
                       {countriesByRegion[region].map((c) => (
-                        <Link key={c.name} href={`/country/${c.name}`}>
+                        <Link key={c.name} href={`/country/${c.code}`}>
                           <div
                             className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer group"
                             data-testid={`link-country-${c.code}`}
