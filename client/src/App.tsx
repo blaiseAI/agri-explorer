@@ -18,6 +18,9 @@ const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const PricingPage = lazy(() => import("@/pages/PricingPage"));
 const SignInPage = lazy(() => import("@/pages/SignInPage"));
 const SignUpPage = lazy(() => import("@/pages/SignUpPage"));
+const AboutPage = lazy(() => import("@/pages/AboutPage"));
+const TermsPage = lazy(() => import("@/pages/TermsPage"));
+const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 function AppRouter() {
@@ -30,6 +33,9 @@ function AppRouter() {
           <Route path="/pricing" component={PricingPage} />
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
+          <Route path="/about" component={AboutPage} />
+          <Route path="/terms" component={TermsPage} />
+          <Route path="/privacy" component={PrivacyPage} />
           <Route path="/countries" component={CountryView} />
           <Route path="/country/:country" component={CountryView} />
           <Route path="/crops" component={CropView} />

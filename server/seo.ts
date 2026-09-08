@@ -66,7 +66,7 @@ function baseDatasetFields() {
 
 // ──────────────────── Route Validation ────────────────────
 
-const STATIC_ROUTES = new Set(["/", "", "/welcome", "/pricing", "/sign-in", "/sign-up", "/countries", "/crops"]);
+const STATIC_ROUTES = new Set(["/", "", "/welcome", "/pricing", "/sign-in", "/sign-up", "/countries", "/crops", "/about", "/terms", "/privacy"]);
 
 // Duplicated from scripts/refresh-data.py's RANKING_CROPS set by necessity —
 // Python and this TypeScript codebase can't share a literal constant across
@@ -285,6 +285,33 @@ export function injectSEO(url: string, template: string): string {
       schemas.push(buildBreadcrumbs([
         { name: "Home", url: "/" },
         { name: "Pricing", url: "/pricing" },
+      ]));
+    }
+    // /about
+    else if (parts[0] === "about") {
+      title = "About Afrixplorer — Methodology & Data Sources | Afrixplorer";
+      description = "How Afrixplorer sources and maintains its African agricultural data: FAOSTAT, World Bank, UN Comtrade, and WFP, refreshed biweekly.";
+      schemas.push(buildBreadcrumbs([
+        { name: "Home", url: "/" },
+        { name: "About", url: "/about" },
+      ]));
+    }
+    // /terms
+    else if (parts[0] === "terms") {
+      title = "Terms of Service | Afrixplorer";
+      description = "Terms of Service for using the Afrixplorer agricultural data platform.";
+      schemas.push(buildBreadcrumbs([
+        { name: "Home", url: "/" },
+        { name: "Terms of Service", url: "/terms" },
+      ]));
+    }
+    // /privacy
+    else if (parts[0] === "privacy") {
+      title = "Privacy Policy | Afrixplorer";
+      description = "Privacy Policy describing what data Afrixplorer collects and how it's used.";
+      schemas.push(buildBreadcrumbs([
+        { name: "Home", url: "/" },
+        { name: "Privacy Policy", url: "/privacy" },
       ]));
     }
   } catch (e) {

@@ -459,7 +459,7 @@ export async function registerRoutes(
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     
     // Static routes
-    const staticRoutes = ["", "/pricing", "/sign-in", "/sign-up", "/countries", "/crops", "/welcome"];
+    const staticRoutes = ["", "/pricing", "/sign-in", "/sign-up", "/countries", "/crops", "/welcome", "/about", "/terms", "/privacy"];
     staticRoutes.forEach(route => {
       const hasDatasetContent = route === "" || route === "/countries" || route === "/crops";
       const routeLastmodTag = hasDatasetContent ? lastmodTag : "";

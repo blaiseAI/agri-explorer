@@ -164,6 +164,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   Pricing
                 </Link>
               )}
+              <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
+                About
+              </Link>
+              <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
+                Terms
+              </Link>
+              <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+                Privacy
+              </Link>
               <span className="text-muted-foreground">Created by Blaise</span>
             </div>
           </div>
