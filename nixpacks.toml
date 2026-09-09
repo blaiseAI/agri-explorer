@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["dejavu_fonts", "fontconfig"]
+nixPkgs = ["nodejs_22", "dejavu_fonts", "fontconfig"]
 
 [phases.install]
 cmds = ["npm ci --include=dev"]
