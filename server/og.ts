@@ -37,15 +37,15 @@ export async function generateOGImage(req: Request, res: Response) {
           <rect x="20" y="12" width="12" height="36" fill="url(#primary)" rx="4"/>
           <rect x="40" y="0" width="12" height="48" fill="url(#primary)" rx="4"/>
           
-          <text x="70" y="38" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="bold" fill="#ffffff" letter-spacing="-1">Afrixplorer</text>
+          <text x="70" y="38" font-family="DejaVu Sans, sans-serif" font-size="34" font-weight="bold" fill="#ffffff" letter-spacing="-1">Afrixplorer</text>
         </g>
 
         <!-- Main Content -->
         <g transform="translate(80, 360)">
-          <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="900" fill="#ffffff" letter-spacing="-2">
+          <text x="0" y="0" font-family="DejaVu Sans, sans-serif" font-size="72" font-weight="900" fill="#ffffff" letter-spacing="-2">
             ${safeTitle}
           </text>
-          <text x="0" y="70" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="500" fill="#a1a1aa">
+          <text x="0" y="70" font-family="DejaVu Sans, sans-serif" font-size="36" font-weight="500" fill="#a1a1aa">
             ${safeSubtitle}
           </text>
         </g>
@@ -53,7 +53,7 @@ export async function generateOGImage(req: Request, res: Response) {
         <!-- Footer / Data Source -->
         <g transform="translate(80, 530)">
           <rect x="0" y="-25" width="220" height="36" fill="#18181b" stroke="#27272a" stroke-width="2" rx="18" />
-          <text x="110" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="#d4d4d8" text-anchor="middle">
+          <text x="110" y="0" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="600" fill="#d4d4d8" text-anchor="middle">
             LIVE DATA UPDATED
           </text>
         </g>

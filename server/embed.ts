@@ -75,10 +75,10 @@ function renderFallback(message: string): string {
   return `
     <svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
       <rect width="${WIDTH}" height="${HEIGHT}" fill="#18181b" />
-      <text x="${WIDTH / 2}" y="${HEIGHT / 2}" font-family="system-ui, sans-serif" font-size="18" fill="#a1a1aa" text-anchor="middle">
+      <text x="${WIDTH / 2}" y="${HEIGHT / 2}" font-family="DejaVu Sans, sans-serif" font-size="18" fill="#a1a1aa" text-anchor="middle">
         ${escapeXml(message)}
       </text>
-      <text x="${WIDTH / 2}" y="${HEIGHT - 24}" font-family="system-ui, sans-serif" font-size="13" fill="#52525b" text-anchor="middle">
+      <text x="${WIDTH / 2}" y="${HEIGHT - 24}" font-family="DejaVu Sans, sans-serif" font-size="13" fill="#52525b" text-anchor="middle">
         afrixplorer.com
       </text>
     </svg>
@@ -104,7 +104,7 @@ function renderChart(
       const showLabel = series.length <= 8 || i % Math.ceil(series.length / 8) === 0;
       return `
         <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${barHeight.toFixed(1)}" fill="url(#bar)" rx="2" />
-        ${showLabel ? `<text x="${(x + w / 2).toFixed(1)}" y="${CHART_BOTTOM + 20}" font-family="system-ui, sans-serif" font-size="12" fill="#a1a1aa" text-anchor="middle">${escapeXml(d.year)}</text>` : ""}
+        ${showLabel ? `<text x="${(x + w / 2).toFixed(1)}" y="${CHART_BOTTOM + 20}" font-family="DejaVu Sans, sans-serif" font-size="12" fill="#a1a1aa" text-anchor="middle">${escapeXml(d.year)}</text>` : ""}
       `;
     })
     .join("");
@@ -122,8 +122,8 @@ function renderChart(
       </defs>
       <rect width="${WIDTH}" height="${HEIGHT}" fill="#18181b" />
 
-      <text x="30" y="38" font-family="system-ui, sans-serif" font-size="22" font-weight="700" fill="#ffffff">${title}</text>
-      <text x="30" y="62" font-family="system-ui, sans-serif" font-size="14" fill="#a1a1aa">
+      <text x="30" y="38" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" fill="#ffffff">${title}</text>
+      <text x="30" y="62" font-family="DejaVu Sans, sans-serif" font-size="14" fill="#a1a1aa">
         Latest (${escapeXml(latest.year)}): ${latest.value.toLocaleString()} ${escapeXml(metric.unit)}
       </text>
 
@@ -131,10 +131,10 @@ function renderChart(
 
       ${bars}
 
-      <text x="30" y="${HEIGHT - 24}" font-family="system-ui, sans-serif" font-size="13" fill="#71717a">
+      <text x="30" y="${HEIGHT - 24}" font-family="DejaVu Sans, sans-serif" font-size="13" fill="#71717a">
         Source: FAOSTAT via afrixplorer.com
       </text>
-      <text x="${WIDTH - 30}" y="${HEIGHT - 24}" font-family="system-ui, sans-serif" font-size="13" fill="#34d399" text-anchor="end">
+      <text x="${WIDTH - 30}" y="${HEIGHT - 24}" font-family="DejaVu Sans, sans-serif" font-size="13" fill="#34d399" text-anchor="end">
         afrixplorer.com
       </text>
     </svg>
