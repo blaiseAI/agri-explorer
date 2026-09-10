@@ -28,7 +28,13 @@
  * }
  * stats.type: "compare" (primary/others/year/othersSum/primaryValue/ratio),
  *             "yoy" (country/crop/year1/year2 -> value1/value2/changePct/changePctAbs/direction),
- *             "rank" (crop/country -> rank/value/year)
+ *             "rank" (crop/country -> rank/value/year),
+ *             "share" (crop/countries -> combined/total/pctShare/year)
+ *
+ * Every stats block also exposes {{sourceLabel}} ("the latest FAOSTAT data").
+ * Prefer it over a bare "{{year}}" in subtext -- a raw "2024" reads as stale
+ * to a casual reader even though it's genuinely the latest full year FAOSTAT
+ * has published; "latest available data" states that honestly instead.
  */
 import sharp from "sharp";
 import path from "path";
@@ -48,13 +54,14 @@ function resolveStats(statsConfig) {
   if (type === "compare") return cropStats.compare(args.crop, args.primary, args.others);
   if (type === "yoy") return cropStats.yoy(args.country, args.crop, args.year1, args.year2);
   if (type === "rank") return cropStats.rank(args.crop, args.country);
+  if (type === "share") return cropStats.share(args.crop, args.countries);
   throw new Error(`Unknown stats.type "${type}"`);
 }
 
 export async function generatePhotoCard(rawConfig, photoPath, outputPath) {
   let config = rawConfig;
   if (rawConfig.stats) {
-    const stats = resolveStats(rawConfig.stats);
+    const stats = { sourceLabel: "the latest FAOSTAT data", ...resolveStats(rawConfig.stats) };
     const { stats: _drop, ...rest } = rawConfig;
     config = cropStats.fillTemplate(rest, stats);
   }

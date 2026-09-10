@@ -71,6 +71,36 @@ export function yoy(country, crop, year1, year2) {
   };
 }
 
+/** combined share of world (top-30) production held by a set of countries. */
+export function share(crop, countries) {
+  const db = new Database(DB_PATH, { readonly: true });
+  const get = db.prepare(
+    "SELECT production, year FROM global_crop_rankings WHERE crop = ? AND country = ?"
+  );
+  const { total } = db
+    .prepare("SELECT SUM(production) AS total FROM global_crop_rankings WHERE crop = ?")
+    .get(crop);
+
+  const rows = countries.map((c) => {
+    const row = get.get(crop, c);
+    if (!row) throw new Error(`No ranking row for ${c} / ${crop}`);
+    return row;
+  });
+  db.close();
+
+  const combined = rows.reduce((s, r) => s + r.production, 0);
+  const pctShare = (combined / total) * 100;
+
+  return {
+    year: rows[0].year,
+    combined: fmt(combined),
+    combinedRaw: combined,
+    total: fmt(total),
+    totalRaw: total,
+    pctShare: pctShare.toFixed(1),
+  };
+}
+
 /** a country's world rank + value for a crop, from global_crop_rankings (top 30 only). */
 export function rank(crop, country) {
   const db = new Database(DB_PATH, { readonly: true });
