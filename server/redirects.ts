@@ -23,6 +23,13 @@ export function wwwRedirect(req: Request, res: Response, next: NextFunction) {
  */
 export function canonicalRedirect(req: Request, res: Response, next: NextFunction) {
   const path = req.path;
+
+  // Strip trailing slashes so /country/NGA/ and /country/NGA aren't two indexable URLs.
+  if (path.length > 1 && path.endsWith("/") && !path.startsWith("/api/")) {
+    const stripped = path.replace(/\/+$/, "") || "/";
+    return res.redirect(301, `${stripped}${req.url.slice(path.length)}`);
+  }
+
   const parts = path.split("/").filter(Boolean);
 
   if (parts[0] === "country" && parts.length === 2) {

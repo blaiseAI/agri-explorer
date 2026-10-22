@@ -77,3 +77,27 @@ describe("canonicalRedirect — rankings", () => {
     expect(redirectCalls).toEqual([[301, "/rankings/Rice?utm_source=x"]]);
   });
 });
+
+describe("canonicalRedirect — trailing slash", () => {
+  it("strips a trailing slash, preserving the query string", () => {
+    const { req, res, next, redirectCalls } = mockReqRes("/country/NGA/?utm_source=x");
+    req.path = "/country/NGA/";
+    canonicalRedirect(req, res, next);
+    expect(redirectCalls).toEqual([[301, "/country/NGA?utm_source=x"]]);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("does not redirect the root path", () => {
+    const { req, res, next, redirectCalls } = mockReqRes("/");
+    canonicalRedirect(req, res, next);
+    expect(redirectCalls).toEqual([]);
+    expect(next).toHaveBeenCalled();
+  });
+
+  it("leaves API paths alone", () => {
+    const { req, res, next, redirectCalls } = mockReqRes("/api/countries/");
+    canonicalRedirect(req, res, next);
+    expect(redirectCalls).toEqual([]);
+    expect(next).toHaveBeenCalled();
+  });
+});

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { getCropData, getTradeData, getImportData, getWorldBankData, getGlobalAvgYields, getCountries, getCrops, getYears, getMetadata, getProducerPrices, getBestPrice, getGlobalRankings } from "./data";
 import { generateInsights, generateDiverseInsights, generateLeaderboard, generateTopCrops, generateSimilarOpportunities } from "./insights";
 import { resolveCrop } from "./resolve";
+import { isIndexableExplore, RANKING_CROP_LIST } from "./indexing";
 import { generateOGImage } from "./og";
 import { generateEmbedChart } from "./embed";
 import Parser from "rss-parser";
@@ -462,8 +463,8 @@ export async function registerRoutes(
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     
-    // Static routes
-    const staticRoutes = ["", "/pricing", "/sign-in", "/sign-up", "/countries", "/crops", "/welcome", "/about", "/terms", "/privacy"];
+    // Static routes (sign-in/sign-up are noindexed and deliberately left out)
+    const staticRoutes = ["", "/pricing", "/countries", "/crops", "/welcome", "/about", "/terms", "/privacy"];
     staticRoutes.forEach(route => {
       const hasDatasetContent = route === "" || route === "/countries" || route === "/crops";
       const routeLastmodTag = hasDatasetContent ? lastmodTag : "";
@@ -488,11 +489,13 @@ export async function registerRoutes(
       xml += `  <url>\n    <loc>${siteUrl}/crop/${encodedCrop}</loc>${lastmodTag}\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
     });
 
-    // Country+Crop specific routes
+    // Country+Crop specific routes — only meaningful producers; the rest are
+    // noindexed (see server/indexing.ts)
     COUNTRIES.forEach(c => {
       const data = CROP_DATA[c.name];
       if (data) {
         for (const crop of Object.keys(data)) {
+          if (!isIndexableExplore(c.name, crop)) continue;
           const encodedCrop = encodeURIComponent(crop);
           xml += `  <url>\n    <loc>${siteUrl}/explore/${c.code}/${encodedCrop}</loc>${lastmodTag}\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
         }
@@ -500,11 +503,7 @@ export async function registerRoutes(
     });
 
     // Rankings routes
-    const RANKING_CROPS = [
-      "Coffee", "Cocoa", "Rice", "Wheat", "Sugar Cane", "Bananas", "Tea",
-      "Seed Cotton", "Maize", "Potatoes", "Olives", "Grapes", "Cassava", "Oil Palm",
-    ];
-    RANKING_CROPS.forEach(crop => {
+    RANKING_CROP_LIST.forEach(crop => {
       const encodedCrop = encodeURIComponent(crop);
       xml += `  <url>\n    <loc>${siteUrl}/rankings/${encodedCrop}</loc>${lastmodTag}\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
     });

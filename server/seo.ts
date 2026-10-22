@@ -1,6 +1,10 @@
 import { getCountries, getCrops, getYears, getMetadata, getGlobalRankings } from "./data";
-import { renderExploreContent, renderCountryContent, renderCropContent, renderRankingsContent } from "./content";
-import { resolveCrop } from "./resolve";
+import {
+  renderExploreContent, renderCountryContent, renderCropContent, renderRankingsContent,
+  renderHomeContent, renderCountriesIndexContent, renderCropsIndexContent,
+} from "./content";
+import { resolveCountry, resolveCrop } from "./resolve";
+import { getExplorePair, RANKING_CROP_LIST } from "./indexing";
 
 const SITE_URL = "https://afrixplorer.com";
 
@@ -68,14 +72,7 @@ function baseDatasetFields() {
 
 const STATIC_ROUTES = new Set(["/", "", "/welcome", "/pricing", "/sign-in", "/sign-up", "/countries", "/crops", "/about", "/terms", "/privacy"]);
 
-// Duplicated from scripts/refresh-data.py's RANKING_CROPS set by necessity —
-// Python and this TypeScript codebase can't share a literal constant across
-// the language boundary. Keep the two lists in sync manually if either ever
-// changes; there's no automated check for drift.
-const RANKING_CROPS = new Set([
-  "Coffee", "Cocoa", "Rice", "Wheat", "Sugar Cane", "Bananas", "Tea",
-  "Seed Cotton", "Maize", "Potatoes", "Olives", "Grapes", "Cassava", "Oil Palm",
-]);
+export const RANKING_CROPS = new Set(RANKING_CROP_LIST);
 
 export function isKnownRoute(url: string): boolean {
   const cleanUrl = url.split("?")[0].split("#")[0];
@@ -96,8 +93,11 @@ export function isKnownRoute(url: string): boolean {
     return crops.some((c) => c.toLowerCase() === name.toLowerCase());
   }
   if (parts[0] === "explore" && parts.length === 3) {
-    const id = decodeURIComponent(parts[1]).toLowerCase();
-    return COUNTRIES.some((c) => c.code.toLowerCase() === id || c.name.toLowerCase() === id);
+    // Both segments must resolve AND the country must actually produce the crop;
+    // otherwise /explore/NGA/Anything would be a 200 soft-404.
+    const country = resolveCountry(parts[1]);
+    const crop = resolveCrop(parts[2]);
+    return !!country && !!crop && getExplorePair(country.name, crop) !== null;
   }
   if (parts[0] === "rankings" && parts.length === 2) {
     const crop = resolveCrop(parts[1]);
@@ -115,6 +115,7 @@ export function injectSEO(url: string, template: string): string {
   let description = "Explore crop production, yield trends, trade data, and investment opportunities across 54 African countries and 136 crops. Powered by FAO and World Bank data.";
   let schemas: any[] = [];
   let bodyContent = "";
+  let noindex = false;
 
   try {
     const parts = url.split("?")[0].split("/").filter(Boolean);
@@ -141,6 +142,7 @@ export function injectSEO(url: string, template: string): string {
           "query-input": "required name=search_term_string",
         },
       });
+      bodyContent = renderHomeContent();
     }
     // /country/:countryId
     else if (parts[0] === "country" && parts[1]) {
@@ -224,6 +226,8 @@ export function injectSEO(url: string, template: string): string {
           { name: cropName, url: `/explore/${country.code}/${encodeURIComponent(cropName)}` },
         ]));
         bodyContent = renderExploreContent(country, cropName);
+        // Minor producers get a page for users but are kept out of the index.
+        noindex = !getExplorePair(country.name, cropName)?.indexable;
       }
     }
     // /rankings/:cropName
@@ -268,6 +272,7 @@ export function injectSEO(url: string, template: string): string {
         { name: "Home", url: "/" },
         { name: "Countries", url: "/countries" },
       ]));
+      bodyContent = renderCountriesIndexContent();
     }
     // /crops
     else if (parts[0] === "crops" && parts.length === 1) {
@@ -277,6 +282,7 @@ export function injectSEO(url: string, template: string): string {
         { name: "Home", url: "/" },
         { name: "Crops", url: "/crops" },
       ]));
+      bodyContent = renderCropsIndexContent();
     }
     // /pricing
     else if (parts[0] === "pricing") {
@@ -286,6 +292,10 @@ export function injectSEO(url: string, template: string): string {
         { name: "Home", url: "/" },
         { name: "Pricing", url: "/pricing" },
       ]));
+    }
+    // /sign-in, /sign-up — no search value
+    else if (parts[0] === "sign-in" || parts[0] === "sign-up") {
+      noindex = true;
     }
     // /about
     else if (parts[0] === "about") {
@@ -390,6 +400,13 @@ export function injectSEO(url: string, template: string): string {
     "</head>",
     `  <link rel="canonical" href="${safeCanonicalUrl}" />\n  </head>`
   );
+
+  if (noindex) {
+    html = html.replace(
+      "</head>",
+      `  <meta name="robots" content="noindex, follow">\n  </head>`
+    );
+  }
 
   // Inject JSON-LD schemas
   if (schemas.length > 0) {

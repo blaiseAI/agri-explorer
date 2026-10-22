@@ -1,5 +1,19 @@
-import { getCropData, getYears, getGlobalAvgYields, getMetadata, type GlobalRankingRow } from "./data";
+import { getCropData, getYears, getGlobalAvgYields, getMetadata, getCountries, getCrops, type GlobalRankingRow } from "./data";
 import { resolveCountry, type ResolvedCountry } from "./resolve";
+import { RANKING_CROP_LIST } from "./indexing";
+
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function cropLink(crop: string): string {
+  return `<a href="/crop/${encodeURIComponent(crop)}">${escapeHtml(crop)}</a>`;
+}
+
+function countryLink(country: { name: string; code: string }): string {
+  return `<a href="/country/${country.code}">${escapeHtml(country.name)}</a>`;
+}
 
 interface YearRow {
   year: string;
@@ -79,7 +93,7 @@ export function renderCountryContent(country: ResolvedCountry): string {
   if (crops.length === 0) return "";
 
   const rows = crops
-    .map((c) => `<tr><td>${c.name}</td><td>${c.production.toLocaleString()}</td></tr>`)
+    .map((c) => `<tr><td><a href="/explore/${country.code}/${encodeURIComponent(c.name)}">${escapeHtml(c.name)}</a></td><td>${c.production.toLocaleString()}</td></tr>`)
     .join("");
 
   return `
@@ -150,7 +164,13 @@ export function renderCropContent(crop: string): string {
   if (countries.length === 0) return "";
 
   const rows = countries
-    .map((c) => `<tr><td>${c.country}</td><td>${c.production.toLocaleString()}</td></tr>`)
+    .map((c) => {
+      const resolved = resolveCountry(c.country);
+      const cell = resolved
+        ? `<a href="/explore/${resolved.code}/${encodeURIComponent(crop)}">${escapeHtml(c.country)}</a>`
+        : escapeHtml(c.country);
+      return `<tr><td>${cell}</td><td>${c.production.toLocaleString()}</td></tr>`;
+    })
     .join("");
 
   return `
@@ -161,5 +181,59 @@ export function renderCropContent(crop: string): string {
       <tbody>${rows}</tbody>
     </table>
     <p>Source: FAOSTAT and World Bank, via Afrixplorer. Last updated ${lastUpdatedDate()}.</p>
+  `;
+}
+
+/** Renders the static fallback body content for the homepage: an intro plus links into every hub. */
+export function renderHomeContent(): string {
+  const countries = getCountries() as ResolvedCountry[];
+  const crops = getCrops();
+  const years = getYears();
+  const span = years.length > 0 ? `${years[0]}–${years[years.length - 1]}` : "2010–2024";
+
+  return `
+    <h1>Crop Production Data for ${countries.length} African Countries</h1>
+    <p>Historical production, yield, and trade data for ${crops.length} crops across ${countries.length} African countries, ${span}, sourced from FAOSTAT and the World Bank. Last updated ${lastUpdatedDate()}.</p>
+    <h2>World production rankings</h2>
+    <ul>${RANKING_CROP_LIST.map((c) => `<li><a href="/rankings/${encodeURIComponent(c)}">${escapeHtml(c)} production by country</a></li>`).join("")}</ul>
+    <h2>Browse by country</h2>
+    <ul>${countries.map((c) => `<li>${countryLink(c)}</li>`).join("")}</ul>
+    <p><a href="/countries">All countries</a> · <a href="/crops">All crops</a> · <a href="/about">Methodology &amp; sources</a></p>
+  `;
+}
+
+/** Renders the static fallback body content for /countries, grouped by region. */
+export function renderCountriesIndexContent(): string {
+  const countries = getCountries() as ResolvedCountry[];
+  const byRegion = new Map<string, ResolvedCountry[]>();
+  for (const c of countries) {
+    const region = c.region || "Other";
+    if (!byRegion.has(region)) byRegion.set(region, []);
+    byRegion.get(region)!.push(c);
+  }
+  const sections = Array.from(byRegion.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([region, list]) => `
+    <h2>${escapeHtml(region)}</h2>
+    <ul>${list.sort((a, b) => a.name.localeCompare(b.name)).map((c) => `<li>${countryLink(c)}</li>`).join("")}</ul>`)
+    .join("");
+
+  return `
+    <h1>Agricultural Data for ${countries.length} African Countries</h1>
+    <p>Crop production, yields, area harvested, and trade data for every African country, sourced from FAOSTAT and the World Bank.</p>
+    ${sections}
+  `;
+}
+
+/** Renders the static fallback body content for /crops: every crop, linked. */
+export function renderCropsIndexContent(): string {
+  const crops = [...getCrops()].sort((a, b) => a.localeCompare(b));
+  return `
+    <h1>${crops.length} Crops Grown Across Africa</h1>
+    <p>Production volumes, yield trends, and trade data for every crop tracked by FAOSTAT across African countries.</p>
+    <h2>World production rankings</h2>
+    <ul>${RANKING_CROP_LIST.map((c) => `<li><a href="/rankings/${encodeURIComponent(c)}">${escapeHtml(c)}</a></li>`).join("")}</ul>
+    <h2>All crops</h2>
+    <ul>${crops.map((c) => `<li>${cropLink(c)}</li>`).join("")}</ul>
   `;
 }
