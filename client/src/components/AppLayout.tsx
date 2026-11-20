@@ -174,7 +174,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
                 Privacy
               </Link>
-              <span className="text-muted-foreground">Created by Blaise</span>
+              <a
+                href="https://blaiseai.github.io/portfolio/"
+                target="_blank"
+                rel="noopener"
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                Created by Blaise
+              </a>
             </div>
           </div>
           
