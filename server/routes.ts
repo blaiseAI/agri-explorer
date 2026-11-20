@@ -463,8 +463,8 @@ export async function registerRoutes(
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     
-    // Static routes (sign-in/sign-up/welcome are noindexed and deliberately left out)
-    const staticRoutes = ["", "/pricing", "/countries", "/crops", "/about", "/terms", "/privacy"];
+    // Static routes (pricing/sign-in/sign-up/welcome are noindexed and deliberately left out)
+    const staticRoutes = ["", "/countries", "/crops", "/about", "/terms", "/privacy"];
     staticRoutes.forEach(route => {
       const hasDatasetContent = route === "" || route === "/countries" || route === "/crops";
       const routeLastmodTag = hasDatasetContent ? lastmodTag : "";

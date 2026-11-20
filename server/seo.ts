@@ -369,6 +369,8 @@ export function injectSEO(url: string, template: string): string {
     }
     // /pricing
     else if (parts[0] === "pricing") {
+      // SaaS page: no search value until the data pages bring organic traffic.
+      noindex = true;
       title = "Pricing — Afrixplorer Agricultural Data Plans";
       description = "Compare Afrixplorer plans for accessing African agricultural production data, yield analytics, and investment insights across 54 countries.";
       schemas.push(buildBreadcrumbs([

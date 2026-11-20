@@ -59,6 +59,10 @@ describe("injectSEO — indexing directives", () => {
     expect(html).not.toContain("<title>African Agricultural Data & Investment Intelligence | Afrixplorer</title>");
   });
 
+  it("noindexes /pricing until the site has organic traffic worth converting", () => {
+    expect(injectSEO("/pricing", template)).toContain('<meta name="robots" content="noindex, follow">');
+  });
+
   it("noindexes the auth pages", () => {
     expect(injectSEO("/sign-in", template)).toContain("noindex");
     expect(injectSEO("/sign-up", template)).toContain("noindex");
