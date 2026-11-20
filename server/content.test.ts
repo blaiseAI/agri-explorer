@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { renderRankingsContent, renderExploreContent, renderCountryContent, renderCropContent } from "./content";
 import { resolveCountry } from "./resolve";
 import { isIndexableExplore } from "./indexing";
-import type { GlobalRankingRow } from "./data";
+import { getGlobalRankings, type GlobalRankingRow } from "./data";
 
 function row(overrides: Partial<GlobalRankingRow>): GlobalRankingRow {
   return {
@@ -223,6 +223,46 @@ describe("renderCropContent", () => {
   it("links only to indexable explore pages", () => exploreLinksAreIndexable(html));
 
   it("has substantially more text than the bare table", () => {
+    expect(proseWords(html)).toBeGreaterThanOrEqual(180);
+  });
+});
+
+describe("renderRankingsContent — enriched (real data)", () => {
+  const html = renderRankingsContent("Coffee", getGlobalRankings("Coffee"));
+
+  it("has one H1 and several H2 sections", () => {
+    expect((html.match(/<h1>/g) || []).length).toBe(1);
+    expect((html.match(/<h2>/g) || []).length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("renders a breadcrumb through the crop hub", () => {
+    const nav = html.match(/<nav aria-label="Breadcrumb">[\s\S]*?<\/nav>/)?.[0] || "";
+    expect(nav).toContain('href="/"');
+    expect(nav).toContain('href="/crop/Coffee"');
+  });
+
+  it("states Africa's share of top-30 production", () => {
+    expect(html).toMatch(/African countries produce \d+(\.\d)?% of the Coffee grown by the world's top \d+ producers/);
+  });
+
+  it("compares African yields with the rest of the top producers", () => {
+    expect(html).toMatch(/yield/i);
+    expect(html).toMatch(/non-African/);
+  });
+
+  it("names the biggest year-on-year movers", () => {
+    expect(html).toMatch(/biggest (increase|gain)/i);
+  });
+
+  it("links to every other world ranking, but not itself", () => {
+    const links = html.match(/href="\/rankings\/[^"]+"/g) || [];
+    expect(links.length).toBe(13);
+    expect(html).not.toContain('href="/rankings/Coffee"');
+  });
+
+  it("links only to indexable explore pages", () => exploreLinksAreIndexable(html));
+
+  it("has substantially more text than the bare tables", () => {
     expect(proseWords(html)).toBeGreaterThanOrEqual(180);
   });
 });

@@ -351,42 +351,114 @@ export function renderCountryContent(country: ResolvedCountry): string {
   `;
 }
 
+/** Area-weighted yield in hg/ha (production in K tonnes, area in K ha). */
+function weightedYield(rows: GlobalRankingRow[]): number | null {
+  const prod = rows.reduce((sum, r) => sum + r.production, 0);
+  const area = rows.reduce((sum, r) => sum + r.area, 0);
+  return area > 0 ? Math.round((prod / area) * 10000) : null;
+}
+
 /** Renders the static fallback body content for a /rankings/:crop page. */
 export function renderRankingsContent(crop: string, rows: GlobalRankingRow[]): string {
   if (rows.length === 0) return "";
 
+  const cropName = escapeHtml(crop);
   const top = rows[0];
   const africanRows = rows.filter((r) => r.code !== null);
+  const otherRows = rows.filter((r) => r.code === null);
+  const n = rows.length;
+
+  // African rows link to their explore page when indexable, else the country page.
+  const africanLink = (r: GlobalRankingRow): string => {
+    const resolved = resolveCountry(r.code!);
+    if (resolved && isIndexableExplore(resolved.name, crop)) return exploreLink(resolved.code, crop, r.country);
+    return `<a href="/country/${r.code}">${escapeHtml(r.country)}</a>`;
+  };
 
   const worldRows = rows
     .map((r) => {
-      const countryCell = r.code
-        ? `<a href="/country/${r.code}">${r.country}</a>`
-        : r.country;
+      const countryCell = r.code ? `<a href="/country/${r.code}">${escapeHtml(r.country)}</a>` : escapeHtml(r.country);
       const yoy = r.yoyPct !== null ? `${r.yoyPct > 0 ? "+" : ""}${r.yoyPct}%` : "—";
       return `<tr><td>${r.rank}</td><td>${countryCell}</td><td>${r.production.toLocaleString()}</td><td>${r.yield.toLocaleString()}</td><td>${r.area.toLocaleString()}</td><td>${yoy}</td></tr>`;
     })
     .join("");
 
+  // Africa's place in the top N
+  const totalTop = rows.reduce((sum, r) => sum + r.production, 0);
+  const africaTop = africanRows.reduce((sum, r) => sum + r.production, 0);
+  const africaShare: string[] = [];
+  if (africanRows.length > 0 && totalTop > 0) {
+    const best = africanRows[0];
+    africaShare.push(`African countries produce ${pct((africaTop / totalTop) * 100)} of the ${cropName} grown by the world's top ${n} producers.`);
+    africaShare.push(`The highest-ranked African producer is ${africanLink(best)} at #${best.rank}, with ${kt(best.production)} thousand tonnes in ${best.year}.`);
+  }
+
+  // Yields: African vs non-African producers in the top N
+  const yields: string[] = [];
+  const yieldLeader = [...rows].sort((a, b) => b.yield - a.yield)[0];
+  if (yieldLeader && yieldLeader.yield > 0) {
+    yields.push(`${yieldLeader.code ? africanLink(yieldLeader) : escapeHtml(yieldLeader.country)} has the highest ${cropName} yield in the top ${n}, at ${yieldLeader.yield.toLocaleString()} hg/ha.`);
+  }
+  const afY = weightedYield(africanRows);
+  const otherY = weightedYield(otherRows);
+  if (afY && otherY) {
+    const gap = ((afY - otherY) / otherY) * 100;
+    yields.push(`Weighted by harvested area, African producers in the ranking average ${afY.toLocaleString()} hg/ha, ${Math.abs(gap) < 2 ? "in line with" : `${pct(gap, 0)} ${gap < 0 ? "below" : "above"}`} the ${otherY.toLocaleString()} hg/ha average of non-African producers.`);
+    const bestAfricanYield = [...africanRows].sort((a, b) => b.yield - a.yield)[0];
+    if (bestAfricanYield && bestAfricanYield !== yieldLeader) {
+      yields.push(`The best African yield belongs to ${africanLink(bestAfricanYield)}, at ${bestAfricanYield.yield.toLocaleString()} hg/ha.`);
+    }
+  }
+
+  // Year-on-year movers
+  const withYoy = rows.filter((r) => r.yoyPct !== null);
+  const movers: string[] = [];
+  if (withYoy.length >= 2) {
+    const up = [...withYoy].sort((a, b) => b.yoyPct! - a.yoyPct!)[0];
+    const down = [...withYoy].sort((a, b) => a.yoyPct! - b.yoyPct!)[0];
+    const label = (r: GlobalRankingRow) => (r.code ? africanLink(r) : escapeHtml(r.country));
+    if (up.yoyPct! > 0) movers.push(`The biggest increase among the top ${n} in ${top.year} was in ${label(up)}, up ${pct(up.yoyPct!)} on the previous year.`);
+    if (down.yoyPct! < 0) movers.push(`The sharpest fall was in ${label(down)}, down ${pct(down.yoyPct!)}.`);
+    const africanUp = africanRows.filter((r) => r.yoyPct !== null && r.yoyPct > 0).length;
+    if (africanRows.length > 0) {
+      const count = africanRows.length === 1
+        ? (africanUp === 1 ? "The one African producer" : "The one African producer")
+        : africanUp === africanRows.length
+          ? (africanRows.length === 2 ? "Both African producers" : `All ${africanRows.length} African producers`)
+          : `${africanUp} of the ${africanRows.length} African producers`;
+      movers.push(africanRows.length === 1 && africanUp === 0
+        ? `${count} in the ranking did not increase output year on year.`
+        : `${count} in the ranking increased output year on year.`);
+    }
+  }
+
   const africaSection = africanRows.length > 0
     ? `
-    <h2>${crop} in Africa</h2>
-    <p>${africanRows.length} African ${africanRows.length === 1 ? "country ranks" : "countries rank"} in the global top ${rows.length}: ${africanRows.map((r) => `${r.country} (#${r.rank})`).join(", ")}.</p>
+    <h2>${cropName} in Africa</h2>
+    <p>${africanRows.length} African ${africanRows.length === 1 ? "country ranks" : "countries rank"} in the global top ${n}: ${africanRows.map((r) => `${escapeHtml(r.country)} (#${r.rank})`).join(", ")}. ${africaShare.join(" ")} For every African producer, including those outside the global top ${n}, see ${cropLink(crop)} production across Africa.</p>
     <table>
       <thead><tr><th>Rank</th><th>Country</th><th>Production (K tonnes)</th></tr></thead>
-      <tbody>${africanRows.map((r) => `<tr><td>${r.rank}</td><td><a href="/explore/${r.code}/${encodeURIComponent(crop)}">${r.country}</a></td><td>${r.production.toLocaleString()}</td></tr>`).join("")}</tbody>
+      <tbody>${africanRows.map((r) => `<tr><td>${r.rank}</td><td>${africanLink(r)}</td><td>${r.production.toLocaleString()}</td></tr>`).join("")}</tbody>
     </table>
     `
-    : `<p>No African country appears in the global top ${rows.length} for ${crop} in this dataset.</p>`;
+    : `<p>No African country appears in the global top ${n} for ${cropName} in this dataset. See ${cropLink(crop)} production across Africa for every African producer.</p>`;
+
+  const otherRankings = RANKING_CROP_LIST.filter((c) => c !== crop);
 
   return `
-    <h1>${crop} Production by Country — World Ranking</h1>
-    <p>${top.country} is the world's largest ${crop} producer, at ${top.production.toLocaleString()} thousand tonnes in ${top.year}${rows.length > 1 ? `, followed by ${rows[1].country}${rows.length > 2 ? ` and ${rows[2].country}` : ""}` : ""}.</p>
+    <nav aria-label="Breadcrumb"><a href="/">Home</a> › <a href="/crops">Crops</a> › ${cropLink(crop)} › World ranking</nav>
+    <h1>${cropName} Production by Country — World Ranking</h1>
+    <p>${escapeHtml(top.country)} is the world's largest ${cropName} producer, at ${top.production.toLocaleString()} thousand tonnes in ${top.year}${rows.length > 1 ? `, followed by ${escapeHtml(rows[1].country)}${rows.length > 2 ? ` and ${escapeHtml(rows[2].country)}` : ""}` : ""}.${rows.length > 2 ? ` Together the top three account for ${pct(((rows[0].production + rows[1].production + rows[2].production) / totalTop) * 100)} of production among the top ${n}.` : ""}</p>
     <table>
       <thead><tr><th>Rank</th><th>Country</th><th>Production (K tonnes)</th><th>Yield (hg/ha)</th><th>Area (K ha)</th><th>YoY</th></tr></thead>
       <tbody>${worldRows}</tbody>
     </table>
     ${africaSection}
+    ${yields.length > 0 ? `<h2>${cropName} yields: Africa and the world</h2>\n    <p>${yields.join(" ")}</p>` : ""}
+    ${movers.length > 0 ? `<h2>Year-on-year changes</h2>\n    <p>${movers.join(" ")}</p>` : ""}
+    <h2>Other world production rankings</h2>
+    <ul>${otherRankings.map((c) => `<li><a href="/rankings/${encodeURIComponent(c)}">${escapeHtml(c)} production by country</a></li>`).join("")}</ul>
+    <p>Source: FAOSTAT, via Afrixplorer. Last updated ${lastUpdatedDate()}.</p>
   `;
 }
 
