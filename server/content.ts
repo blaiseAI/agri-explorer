@@ -64,7 +64,7 @@ function changePct(from: number, to: number): number | null {
 }
 
 /** Thousand-tonne figures: whole numbers when large, one decimal when small so "3.4" doesn't round to "3". */
-function kt(n: number): string {
+export function kt(n: number): string {
   return n >= 100 ? Math.round(n).toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 1 });
 }
 
@@ -73,7 +73,7 @@ function ordinalRank(rank: number): string {
 }
 
 /** African producers of a crop by latest-year production, highest first (same basis as indexing.ts). */
-function africanProducers(crop: string): { name: string; code: string; production: number; share: number }[] {
+export function africanProducers(crop: string): { name: string; code: string; production: number; share: number }[] {
   const out: { name: string; code: string; production: number; share: number }[] = [];
   for (const name of Object.keys(cropData())) {
     const pair = getExplorePair(name, crop);
@@ -81,6 +81,22 @@ function africanProducers(crop: string): { name: string; code: string; productio
     if (pair && resolved) out.push({ name, code: resolved.code, production: pair.production, share: pair.share });
   }
   return out.sort((a, b) => b.production - a.production);
+}
+
+/** Latest year with production data for a country/crop pair, or null. */
+export function latestProduction(countryName: string, crop: string): { year: string; production: number } | null {
+  const series = buildSeries(countryName, crop).filter((r) => r.production > 0);
+  const last = series[series.length - 1];
+  return last ? { year: last.year, production: last.production } : null;
+}
+
+/** Crops a country produces, largest first by latest production. */
+export function countryCropsByProduction(countryName: string): string[] {
+  return Object.keys(cropData()[countryName] || {})
+    .map((crop) => ({ crop, pair: getExplorePair(countryName, crop) }))
+    .filter((c) => c.pair !== null)
+    .sort((a, b) => b.pair!.production - a.pair!.production)
+    .map((c) => c.crop);
 }
 
 /** A country's other crops with indexable explore pages, largest first. */

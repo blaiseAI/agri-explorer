@@ -1,6 +1,7 @@
 import { getCountries, getCrops, getYears, getMetadata, getGlobalRankings } from "./data";
 import {
   renderExploreContent, renderCountryContent, renderCropContent, renderRankingsContent,
+  africanProducers, kt, latestProduction, countryCropsByProduction,
   renderHomeContent, renderCountriesIndexContent, renderCropsIndexContent,
 } from "./content";
 import { resolveCountry, resolveCrop } from "./resolve";
@@ -43,6 +44,62 @@ function getDatePublished(): string {
     return meta.lastUpdated.substring(0, 10);
   }
   return "2024-01-01";
+}
+
+const BRAND = " | Afrixplorer";
+const MAX_TITLE = 60;
+const MAX_DESC = 160;
+
+/**
+ * Picks the first candidate that fits Google's ~60-character display with the
+ * brand appended, then the first that fits without it, else the shortest.
+ */
+export function fitTitle(...candidates: string[]): string {
+  for (const c of candidates) if (c.length + BRAND.length <= MAX_TITLE) return c + BRAND;
+  for (const c of candidates) if (c.length <= MAX_TITLE) return c;
+  return candidates.reduce((a, b) => (b.length < a.length ? b : a));
+}
+
+/**
+ * FAOSTAT's official item names can run past 70 characters, which blows up titles
+ * and snippets. These are used only in <title> and meta descriptions; headings and
+ * body copy keep the official name.
+ */
+const SHORT_CROP_NAMES: Record<string, string> = {
+  "Edible roots and tubers with high starch or inulin content, n.e.c., fresh": "Other Starchy Roots & Tubers",
+  "Anise, badian, coriander, cumin, caraway, fennel and juniper berries, raw": "Anise, Cumin & Seed Spices",
+  "Other berries and fruits of the genus vaccinium n.e.c.": "Vaccinium Berries",
+  "Kenaf, and other textile bast fibres, raw or retted": "Kenaf & Bast Fibres",
+  "Other stimulant, spice and aromatic crops, n.e.c.": "Other Spice Crops",
+  "Cinnamon and cinnamon-tree flowers, raw": "Cinnamon",
+  "Leeks and other alliaceous vegetables": "Leeks & Alliums",
+  "Tangerines, mandarins, clementines": "Tangerines & Mandarins",
+  "Broad beans and horse beans, green": "Green Broad Beans",
+  "Broad beans and horse beans, dry": "Dry Broad Beans",
+  "Cantaloupes and other melons": "Melons",
+  "Nutmeg, mace, cardamoms, raw": "Nutmeg & Cardamom",
+  "Onions and shallots, green": "Green Onions",
+  "Cloves (whole stems), raw": "Cloves",
+  "Abaca, manila hemp, raw": "Abaca (Manila Hemp)",
+  "Cauliflowers and broccoli": "Cauliflower & Broccoli",
+  "Pomelos and grapefruits": "Grapefruit & Pomelos",
+};
+
+/** Short display name for titles and snippets; strips FAOSTAT's ", n.e.c." and ", raw" suffixes otherwise. */
+export function shortCropName(crop: string): string {
+  return SHORT_CROP_NAMES[crop] ?? crop.replace(/,? n\.e\.c\.$/, "").replace(/, raw$/, "");
+}
+
+/** Trims a description to 160 characters at a word boundary. */
+export function clampDescription(text: string): string {
+  if (text.length <= MAX_DESC) return text;
+  const cut = text.slice(0, MAX_DESC - 1);
+  return cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:.\s]+$/, "") + "…";
+}
+
+function yearSpan(): string {
+  const years = getYears();
+  return years.length > 0 ? `${years[0]}–${years[years.length - 1]}` : "2010–2024";
 }
 
 function baseDatasetFields() {
@@ -149,13 +206,17 @@ export function injectSEO(url: string, template: string): string {
       const countryId = decodeURIComponent(parts[1]).toLowerCase();
       const country = COUNTRIES.find((c) => c.code.toLowerCase() === countryId || c.name.toLowerCase() === countryId);
       if (country) {
-        title = `${country.name} Agricultural Data — Crop Production, Yields & Trade | Afrixplorer`;
-        description = `Explore historical crop production, yield trends, and agricultural investment opportunities in ${country.name}. Data for all major crops from 2010-2024.`;
+        title = fitTitle(`${country.name} Crop Production & Agricultural Data`);
+        const countryCrops = countryCropsByProduction(country.name);
+        description = clampDescription(countryCrops.length > 0
+          ? `${country.name} agricultural data, ${yearSpan()}: production, yields and trends for ${countryCrops.length} crops, led by ${countryCrops.slice(0, 3).join(", ")}. From FAOSTAT and the World Bank.`
+          : `Crop production, yields and agricultural trends in ${country.name}, ${yearSpan()}, from FAOSTAT and the World Bank.`);
         schemas.push({
           "@context": "https://schema.org/",
           "@type": "Dataset",
           "name": `Agricultural Production Data for ${country.name}`,
           "description": description,
+          "url": `${SITE_URL}/country/${country.code}`,
           "keywords": [country.name, "Agriculture", "Crop Production", "Africa", "Investment", "Yield Data"],
           "spatialCoverage": {
             "@type": "Place",
@@ -175,13 +236,19 @@ export function injectSEO(url: string, template: string): string {
     else if (parts[0] === "crop" && parts[1]) {
       const cropName = resolveCrop(parts[1]);
       if (cropName) {
-        title = `${cropName} Production Data Across Africa — Yields, Trade & Trends | Afrixplorer`;
-        description = `Analyze ${cropName} production volumes, yield trends, and trade data across 54 African countries. Historical data from 2010-2024.`;
+        const cropShort = shortCropName(cropName);
+        title = fitTitle(`${cropShort} Production in Africa by Country`, `${cropShort} Production in Africa`);
+        const producers = africanProducers(cropName);
+        description = clampDescription(producers.length > 0
+          ? `${cropShort} production in Africa: ${producers.length} producing ${producers.length === 1 ? "country" : "countries"}, led by ${producers[0].name} with ${(producers[0].share * 100).toFixed(1)}% of output. Yields, top producers and trends, ${yearSpan()}.`
+          : `${cropShort} production, yields and trends across Africa, ${yearSpan()}.`);
         schemas.push({
           "@context": "https://schema.org/",
           "@type": "Dataset",
           "name": `${cropName} Production Data Across Africa`,
           "description": description,
+          "url": `${SITE_URL}/crop/${encodeURIComponent(cropName)}`,
+          "spatialCoverage": { "@type": "Place", "name": "Africa" },
           "keywords": [cropName, "Agriculture", "Yield", "Production", "Africa", "Trade"],
           ...baseDatasetFields(),
           "variableMeasured": [
@@ -205,13 +272,23 @@ export function injectSEO(url: string, template: string): string {
       const cropName = resolveCrop(parts[2]);
       const country = COUNTRIES.find((c) => c.code.toLowerCase() === countryId || c.name.toLowerCase() === countryId);
       if (country && cropName) {
-        title = `${cropName} Production in ${country.name} — Yield, Area & Trade Data | Afrixplorer`;
-        description = `Deep-dive into ${cropName} production volume, yield metrics, area harvested, and trade data in ${country.name}. Historical trends from 2010-2024.`;
+        const cropShort = shortCropName(cropName);
+        title = fitTitle(
+          `${cropShort} Production in ${country.name}, ${yearSpan()}`,
+          `${cropShort} Production in ${country.name}`,
+          `${cropShort} in ${country.name}`,
+        );
+        const pair = getExplorePair(country.name, cropName);
+        const latest = latestProduction(country.name, cropName);
+        description = clampDescription(pair && latest
+          ? `${country.name} produced ${kt(latest.production)} thousand tonnes of ${cropShort} in ${latest.year}, ${pair.rank === 1 ? "#1 in Africa" : `#${pair.rank} in Africa`} with ${(pair.share * 100).toFixed(1)}% of output. Yield, area and trends, ${yearSpan()}.`
+          : `${cropShort} production, yield and harvested area in ${country.name}, ${yearSpan()}.`);
         schemas.push({
           "@context": "https://schema.org/",
           "@type": "Dataset",
           "name": `${cropName} Production in ${country.name}`,
           "description": description,
+          "url": `${SITE_URL}/explore/${country.code}/${encodeURIComponent(cropName)}`,
           "keywords": [cropName, country.name, "Agriculture", "Yield", "Production", "Trade"],
           "spatialCoverage": {
             "@type": "Place",
@@ -235,14 +312,19 @@ export function injectSEO(url: string, template: string): string {
       const cropName = resolveCrop(parts[1]);
       if (cropName && RANKING_CROPS.has(cropName)) {
         const rankings = getGlobalRankings(cropName);
-        title = `${cropName} Production by Country — World Ranking | Afrixplorer`;
-        description = `See which countries produce the most ${cropName} globally, with African producers ranked in context. Updated from FAOSTAT data.`;
+        title = fitTitle(`${cropName} Production by Country: World Ranking`);
+        const africanCount = rankings.filter((r) => r.code !== null).length;
+        description = clampDescription(rankings.length > 0
+          ? `The world's top ${rankings.length} ${cropName} producers, led by ${rankings[0].country}. See where ${africanCount} African ${africanCount === 1 ? "country ranks" : "countries rank"}, with yields and year-on-year changes.`
+          : `World ${cropName} production ranking by country, with African producers in context. From FAOSTAT data.`);
         if (rankings.length > 0) {
           schemas.push({
             "@context": "https://schema.org/",
             "@type": "Dataset",
             "name": `${cropName} Production by Country — World Ranking`,
             "description": description,
+            "url": `${SITE_URL}/rankings/${encodeURIComponent(cropName)}`,
+            "spatialCoverage": { "@type": "Place", "name": "World" },
             "keywords": [cropName, "Ranking", "World Production", "Agriculture"],
             ...baseDatasetFields(),
           });
@@ -258,7 +340,8 @@ export function injectSEO(url: string, template: string): string {
           schemas.push(buildBreadcrumbs([
             { name: "Home", url: "/" },
             { name: "Crops", url: "/crops" },
-            { name: `${cropName} Rankings`, url: `/rankings/${encodeURIComponent(cropName)}` },
+            { name: cropName, url: `/crop/${encodeURIComponent(cropName)}` },
+            { name: "World ranking", url: `/rankings/${encodeURIComponent(cropName)}` },
           ]));
         }
         bodyContent = renderRankingsContent(cropName, rankings);
@@ -266,7 +349,7 @@ export function injectSEO(url: string, template: string): string {
     }
     // /countries
     else if (parts[0] === "countries" && parts.length === 1) {
-      title = "African Countries Agricultural Overview — 54 Nations | Afrixplorer";
+      title = fitTitle("Agricultural Data for 54 African Countries");
       description = "Browse agricultural data for 54 African countries. Compare crop production, yields, trade volumes, and investment potential.";
       schemas.push(buildBreadcrumbs([
         { name: "Home", url: "/" },
@@ -292,6 +375,8 @@ export function injectSEO(url: string, template: string): string {
         { name: "Home", url: "/" },
         { name: "Pricing", url: "/pricing" },
       ]));
+      bodyContent = `<h1>Simple, transparent pricing</h1>
+    <p>Compare Afrixplorer plans for African agricultural production data, yield analytics and investment insights across 54 countries. Browse <a href="/countries">countries</a> and <a href="/crops">crops</a> for free.</p>`;
     }
     // /welcome — marketing landing page. Same search intent as the homepage and
     // nothing links to it, so keep it out of the index to avoid cannibalizing /.
@@ -312,6 +397,8 @@ export function injectSEO(url: string, template: string): string {
         { name: "Home", url: "/" },
         { name: "About", url: "/about" },
       ]));
+      bodyContent = `<h1>About Afrixplorer</h1>
+    <p>What this platform is, where the data comes from, and how it is maintained. Afrixplorer draws on FAOSTAT, the World Bank, UN Comtrade and WFP, refreshed every two weeks.</p>`;
     }
     // /terms
     else if (parts[0] === "terms") {
@@ -321,6 +408,8 @@ export function injectSEO(url: string, template: string): string {
         { name: "Home", url: "/" },
         { name: "Terms of Service", url: "/terms" },
       ]));
+      bodyContent = `<h1>Terms of Service</h1>
+    <p>The terms for using the Afrixplorer agricultural data platform.</p>`;
     }
     // /privacy
     else if (parts[0] === "privacy") {
@@ -330,6 +419,8 @@ export function injectSEO(url: string, template: string): string {
         { name: "Home", url: "/" },
         { name: "Privacy Policy", url: "/privacy" },
       ]));
+      bodyContent = `<h1>Privacy Policy</h1>
+    <p>What data Afrixplorer collects and how it is used.</p>`;
     }
   } catch (e) {
     console.error("SEO injection error:", e);
