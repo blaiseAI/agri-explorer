@@ -293,6 +293,13 @@ export function injectSEO(url: string, template: string): string {
         { name: "Pricing", url: "/pricing" },
       ]));
     }
+    // /welcome — marketing landing page. Same search intent as the homepage and
+    // nothing links to it, so keep it out of the index to avoid cannibalizing /.
+    else if (parts[0] === "welcome") {
+      title = "Welcome to Afrixplorer — African Agriculture Intelligence";
+      description = "An introduction to Afrixplorer: crop production, trade flows, and investment signals across 54 African countries, built on FAOSTAT and World Bank data.";
+      noindex = true;
+    }
     // /sign-in, /sign-up — no search value
     else if (parts[0] === "sign-in" || parts[0] === "sign-up") {
       noindex = true;

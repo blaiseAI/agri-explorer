@@ -53,6 +53,12 @@ describe("injectSEO — indexing directives", () => {
     expect(injectSEO(pair, template)).toContain('<meta name="robots" content="noindex, follow">');
   });
 
+  it("noindexes /welcome, which targets the same intent as the homepage", () => {
+    const html = injectSEO("/welcome", template);
+    expect(html).toContain('<meta name="robots" content="noindex, follow">');
+    expect(html).not.toContain("<title>African Agricultural Data & Investment Intelligence | Afrixplorer</title>");
+  });
+
   it("noindexes the auth pages", () => {
     expect(injectSEO("/sign-in", template)).toContain("noindex");
     expect(injectSEO("/sign-up", template)).toContain("noindex");
