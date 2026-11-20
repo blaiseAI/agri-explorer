@@ -137,7 +137,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1">
+      {/* At least a screen tall so the footer starts below the fold and does not jump as content loads (CLS). */}
+      <main className="flex-1 min-h-[100svh]">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 pb-12">
           {children}
         </div>

@@ -28,10 +28,18 @@
     <meta name="twitter:image" content="https://afrixplorer.com/apple-touch-icon.png">
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- General Sans, inlined from api.fontshare.com so there is no render-blocking stylesheet.
+         font-display: optional means text never reflows when the font arrives (CLS): if it isn't
+         ready within ~100ms the system font is used for that page view, and cached thereafter.
+         Inter was only a fallback in --font-sans, so it is no longer downloaded. -->
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
+    <link rel="preload" href="https://cdn.fontshare.com/wf/MFQT7HFGCR2L5ULQTW6YXYZXXHMPKLJ3/YWQ244D6TACUX5JBKATPOW5I5MGJ3G73/7YY3ZAAE3TRV2LANYOLXNHTPHLXVWTKH.woff2" as="font" type="font/woff2" crossorigin>
+    <style>
+      @font-face { font-family: 'General Sans'; src: url('https://cdn.fontshare.com/wf/MFQT7HFGCR2L5ULQTW6YXYZXXHMPKLJ3/YWQ244D6TACUX5JBKATPOW5I5MGJ3G73/7YY3ZAAE3TRV2LANYOLXNHTPHLXVWTKH.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: optional; }
+      @font-face { font-family: 'General Sans'; src: url('https://cdn.fontshare.com/wf/3RZHWSNONLLWJK3RLPEKUZOMM56GO4LJ/BPDRY7AHVI3MCDXXVXTQQ76H3UXA63S3/SB2OEB6IKZPRR6JT4GFJ2TFT6HBB6AZN.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: optional; }
+      @font-face { font-family: 'General Sans'; src: url('https://cdn.fontshare.com/wf/K46YRH762FH3QJ25IQM3VAXAKCHEXXW4/ISLWQPUZHZF33LRIOTBMFOJL57GBGQ4B/3ZLMEXZEQPLTEPMHTQDAUXP5ZZXCZAEN.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: optional; }
+      @font-face { font-family: 'General Sans'; src: url('https://cdn.fontshare.com/wf/KWXO5X3YW4X7OLUMPO4X24HQJGJU7E2Q/VOWUQZS3YLP66ZHPTXAFSH6YACY4WJHT/NIQ54PVBBIWVK3PFSOIOUJSXIJ5WTNDP.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: optional; }
+    </style>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-8ZVXCXCYMQ"></script>
     <script>

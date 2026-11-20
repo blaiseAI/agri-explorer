@@ -166,7 +166,9 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="space-y-8">
-        <Skeleton className="h-24 max-w-2xl rounded-xl" />
+        <DashboardHero />
+        {/* Reserve the data-freshness row so the KPIs don't shift when it appears. */}
+        <Skeleton className="h-4 w-72" />
         <div className="space-y-2">
           <Skeleton className="h-4 w-48 mb-2" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -190,20 +192,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Hero */}
-      <div className="space-y-2">
-        <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">
-          Crop Production Data for {countriesCount} African Countries
-        </h1>
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Historical production, yield, and trade data for {cropsCount} crops, sourced from FAOSTAT and the World Bank.
-          Explore production trends, yield gaps, and trade signals spanning {yearsRange}.
-        </p>
-      </div>
+      <DashboardHero countriesCount={countriesCount} cropsCount={cropsCount} yearsRange={yearsRange} />
 
-      {/* Data freshness indicator */}
+      {/* Data freshness indicator (h-4 matches the loading placeholder) */}
       {lastUpdated && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="data-freshness">
+        <div className="flex items-center gap-2 h-4 text-xs text-muted-foreground" data-testid="data-freshness">
           <RefreshCw size={12} />
           <span>Data last updated: {formatDate(lastUpdated)}</span>
           <span className="text-muted-foreground/50">·</span>
@@ -483,6 +476,28 @@ export default function Dashboard() {
         </Card>
       )}
 
+    </div>
+  );
+}
+
+/**
+ * Rendered in both the loading and loaded states so the hero doesn't swap from a
+ * skeleton to text and push the page down (CLS). Fallbacks match the dataset.
+ */
+function DashboardHero({ countriesCount = 54, cropsCount = 136, yearsRange = "2010–2024" }: {
+  countriesCount?: number;
+  cropsCount?: number;
+  yearsRange?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">
+        Crop Production Data for {countriesCount} African Countries
+      </h1>
+      <p className="text-sm text-muted-foreground max-w-2xl">
+        Historical production, yield, and trade data for {cropsCount} crops, sourced from FAOSTAT and the World Bank.
+        Explore production trends, yield gaps, and trade signals spanning {yearsRange}.
+      </p>
     </div>
   );
 }
