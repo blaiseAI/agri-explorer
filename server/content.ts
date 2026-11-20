@@ -1,4 +1,4 @@
-import { getCropData, getYears, getGlobalAvgYields, getMetadata, getCountries, getCrops, type GlobalRankingRow } from "./data";
+import { getCropData, getYears, getGlobalAvgYields, getMetadata, getCountries, getCrops, getWorldBankData, type GlobalRankingRow } from "./data";
 import { resolveCountry, type ResolvedCountry } from "./resolve";
 import { RANKING_CROP_LIST, getExplorePair, isIndexableExplore } from "./indexing";
 
@@ -61,6 +61,11 @@ function pct(n: number, digits = 1): string {
 
 function changePct(from: number, to: number): number | null {
   return from > 0 && to > 0 ? ((to - from) / from) * 100 : null;
+}
+
+/** Thousand-tonne figures: whole numbers when large, one decimal when small so "3.4" doesn't round to "3". */
+function kt(n: number): string {
+  return n >= 100 ? Math.round(n).toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 1 });
 }
 
 function ordinalRank(rank: number): string {
@@ -218,34 +223,131 @@ export function renderExploreContent(country: ResolvedCountry, crop: string): st
   `;
 }
 
+/** Latest non-null value of a World Bank series, with its year. */
+function latestIndicator(series: Record<string, number | null> | undefined): { year: string; value: number } | null {
+  if (!series) return null;
+  const years = Object.keys(series).filter((y) => series[y] !== null && series[y] !== undefined).sort();
+  if (years.length === 0) return null;
+  const year = years[years.length - 1];
+  return { year, value: series[year] as number };
+}
+
+function earliestIndicator(series: Record<string, number | null> | undefined): { year: string; value: number } | null {
+  if (!series) return null;
+  const years = Object.keys(series).filter((y) => series[y] !== null && series[y] !== undefined).sort();
+  return years.length > 0 ? { year: years[0], value: series[years[0]] as number } : null;
+}
+
+/** Links to an explore page when it's indexable, otherwise to the crop hub. */
+function cropCellLink(country: ResolvedCountry, crop: string): string {
+  return isIndexableExplore(country.name, crop)
+    ? exploreLink(country.code, crop, crop)
+    : cropLink(crop);
+}
+
+function listSentence(items: string[]): string {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
 /** Renders the static fallback body content for a /country/:id page. */
 export function renderCountryContent(country: ResolvedCountry): string {
   const countryData = cropData()[country.name];
   if (!countryData) return "";
-  const crops = Object.entries(countryData)
-    .map(([name, data]) => {
-      const years = Object.keys(data.production).sort();
-      const latest = years[years.length - 1];
-      return { name, production: data.production[latest] || 0 };
-    })
-    .filter((c) => c.production > 0)
-    .sort((a, b) => b.production - a.production)
-    .slice(0, 15);
 
+  const name = escapeHtml(country.name);
+  const crops = Object.keys(countryData)
+    .map((crop) => ({ crop, pair: getExplorePair(country.name, crop) }))
+    .filter((c): c is { crop: string; pair: NonNullable<typeof c.pair> } => c.pair !== null)
+    .sort((a, b) => b.pair.production - a.pair.production);
   if (crops.length === 0) return "";
 
-  const rows = crops
-    .map((c) => `<tr><td><a href="/explore/${country.code}/${encodeURIComponent(c.name)}">${escapeHtml(c.name)}</a></td><td>${c.production.toLocaleString()}</td></tr>`)
+  const top = crops[0];
+  const years = getYears();
+  const span = years.length > 0 ? `${years[0]}–${years[years.length - 1]}` : "";
+
+  // Agriculture in the economy (World Bank)
+  const wb = getWorldBankData()[country.name] || {};
+  const gdp = latestIndicator(wb.agGdpPct);
+  const gdpStart = earliestIndicator(wb.agGdpPct);
+  const employ = latestIndicator(wb.agEmployPct);
+  const employStart = earliestIndicator(wb.agEmployPct);
+  const rural = latestIndicator(wb.ruralPct);
+  const economy: string[] = [];
+  if (gdp) {
+    const shift = gdpStart && gdpStart.year !== gdp.year
+      ? `, compared with ${gdpStart.value.toFixed(1)}% in ${gdpStart.year}`
+      : "";
+    economy.push(`Agriculture, forestry and fishing made up ${gdp.value.toFixed(1)}% of GDP in ${name} in ${gdp.year}${shift}.`);
+  }
+  if (employ) {
+    const shift = employStart && employStart.year !== employ.year
+      ? ` (${employStart.value.toFixed(1)}% in ${employStart.year})`
+      : "";
+    economy.push(`The sector employs ${employ.value.toFixed(1)}% of the workforce${shift}.`);
+  }
+  if (rural) economy.push(`${rural.value.toFixed(1)}% of the population lived in rural areas in ${rural.year}.`);
+
+  // Where it leads Africa
+  const leaders = crops.filter((c) => c.pair.rank === 1);
+  const podium = crops.filter((c) => c.pair.rank === 2 || c.pair.rank === 3);
+  const leadership: string[] = [];
+  if (leaders.length > 0) {
+    leadership.push(`${name} is Africa's largest producer of ${listSentence(leaders.slice(0, 8).map((c) => `${cropCellLink(country, c.crop)} (${pct(c.pair.share * 100)})`))}${leaders.length > 8 ? `, plus ${leaders.length - 8} more crops` : ""}; figures in brackets are its share of African output.`);
+  }
+  if (podium.length > 0) {
+    leadership.push(`It ranks second or third in Africa for ${listSentence(podium.slice(0, 8).map((c) => cropCellLink(country, c.crop)))}.`);
+  }
+  if (leadership.length === 0) {
+    const best = [...crops].sort((a, b) => a.pair.rank - b.pair.rank)[0];
+    leadership.push(best.pair.share < 0.02
+      ? `${name} is a small producer by continental standards and does not lead Africa in any tracked crop. Its highest ranking is #${best.pair.rank} of ${africanProducers(best.crop).length} African producers of ${cropCellLink(country, best.crop)}, with ${pct(best.pair.share * 100)} of output.`
+      : `Its strongest position in Africa is in ${cropCellLink(country, best.crop)}, where it ranks #${best.pair.rank} among African producers with ${pct(best.pair.share * 100)} of output.`);
+  }
+
+  // Fastest growth among the main crops
+  const growers = crops.slice(0, 20)
+    .map((c) => {
+      const series = buildSeries(country.name, c.crop).filter((r) => r.production > 0);
+      const g = series.length > 1 ? changePct(series[0].production, series[series.length - 1].production) : null;
+      return { crop: c.crop, growth: g, from: series[0]?.year, to: series[series.length - 1]?.year };
+    })
+    .filter((g): g is { crop: string; growth: number; from: string; to: string } => g.growth !== null)
+    .sort((a, b) => b.growth - a.growth);
+  const rising = growers.filter((g) => g.growth > 0).slice(0, 4);
+  const falling = growers.filter((g) => g.growth < 0).slice(-3).reverse();
+  const trend: string[] = [];
+  if (rising.length > 0) {
+    trend.push(`Among its 20 largest crops, the fastest growth since ${rising[0].from} has been in ${listSentence(rising.map((g) => `${cropCellLink(country, g.crop)} (up ${pct(g.growth, 0)})`))}.`);
+  }
+  if (falling.length > 0) {
+    trend.push(`Output has declined for ${listSentence(falling.map((g) => `${cropCellLink(country, g.crop)} (down ${pct(g.growth, 0)})`))}.`);
+  }
+
+  // Region
+  const allCountries = getCountries() as (ResolvedCountry & { region?: string })[];
+  const region = allCountries.find((c) => c.code === country.code)?.region;
+  const neighbours = region ? allCountries.filter((c) => c.region === region && c.code !== country.code) : [];
+
+  const rows = crops.slice(0, 15)
+    .map((c) => `<tr><td>${cropCellLink(country, c.crop)}</td><td>${c.pair.production.toLocaleString()}</td><td>#${c.pair.rank}</td><td>${pct(c.pair.share * 100)}</td></tr>`)
     .join("");
 
   return `
-    <h1>${country.name} Agricultural Data</h1>
-    <p>${country.name} produces ${crops.length}+ tracked crops. Its top crop by production volume is ${crops[0].name}, at ${crops[0].production.toLocaleString()} thousand tonnes in the most recent year on record.</p>
+    <nav aria-label="Breadcrumb"><a href="/">Home</a> › <a href="/countries">Countries</a> › ${name}</nav>
+    <h1>${name} Agricultural Data</h1>
+    <p>${name} has ${crops.length} crops tracked in FAOSTAT data for ${span}. Its largest crop by production volume is ${cropCellLink(country, top.crop)}, at ${top.pair.production.toLocaleString()} thousand tonnes in the most recent year on record.</p>
+    ${economy.length > 0 ? `<h2>Agriculture in ${name}'s economy</h2>\n    <p>${economy.join(" ")}</p>` : ""}
+    <h2>Where ${name} leads African production</h2>
+    <p>${leadership.join(" ")}</p>
+    <h2>Top crops in ${name} by production</h2>
     <table>
-      <thead><tr><th>Crop</th><th>Latest Production (K tonnes)</th></tr></thead>
+      <thead><tr><th>Crop</th><th>Latest Production (K tonnes)</th><th>Rank in Africa</th><th>Share of African output</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <p>Source: FAOSTAT and World Bank, via Afrixplorer. Last updated ${lastUpdatedDate()}.</p>
+    ${trend.length > 0 ? `<h2>Production trends in ${name}</h2>\n    <p>${trend.join(" ")}</p>` : ""}
+    ${neighbours.length > 0 ? `<h2>Other countries in ${escapeHtml(region!)}</h2>\n    <ul>${neighbours.map((c) => `<li>${countryLink(c)}</li>`).join("")}</ul>` : ""}
+    <p>Browse <a href="/countries">all 54 African countries</a> or <a href="/crops">all crops</a>. Source: FAOSTAT and World Bank, via Afrixplorer. Last updated ${lastUpdatedDate()}.</p>
   `;
 }
 
@@ -290,39 +392,102 @@ export function renderRankingsContent(crop: string, rows: GlobalRankingRow[]): s
 
 /** Renders the static fallback body content for a /crop/:name page. */
 export function renderCropContent(crop: string): string {
-  const CROP_DATA = cropData();
-  const countries = Object.entries(CROP_DATA)
-    .map(([countryName, crops]) => {
-      const data = crops[crop];
-      if (!data) return null;
-      const years = Object.keys(data.production).sort();
-      const latest = years[years.length - 1];
-      return { country: countryName, production: data.production[latest] || 0 };
-    })
-    .filter((c): c is { country: string; production: number } => !!c && c.production > 0)
-    .sort((a, b) => b.production - a.production)
-    .slice(0, 15);
+  const producers = africanProducers(crop);
+  if (producers.length === 0) return "";
 
-  if (countries.length === 0) return "";
+  const cropName = escapeHtml(crop);
+  const total = producers.reduce((sum, p) => sum + p.production, 0);
+  const top = producers[0];
+  const top3Share = producers.slice(0, 3).reduce((sum, p) => sum + p.share, 0);
+  const link = (p: { name: string; code: string }) =>
+    isIndexableExplore(p.name, crop) ? exploreLink(p.code, crop, p.name) : countryLink(p);
 
-  const rows = countries
-    .map((c) => {
-      const resolved = resolveCountry(c.country);
-      const cell = resolved
-        ? `<a href="/explore/${resolved.code}/${encodeURIComponent(crop)}">${escapeHtml(c.country)}</a>`
-        : escapeHtml(c.country);
-      return `<tr><td>${cell}</td><td>${c.production.toLocaleString()}</td></tr>`;
+  // Continental trend: sum each year across producers
+  const years = getYears();
+  const totals = years.map((y) => ({
+    year: y,
+    production: producers.reduce((sum, p) => sum + (cropData()[p.name]?.[crop]?.production[y] || 0), 0),
+  })).filter((t) => t.production > 0);
+  const firstTotal = totals[0];
+  const lastTotal = totals[totals.length - 1];
+  const continentGrowth = firstTotal && lastTotal && firstTotal !== lastTotal
+    ? changePct(firstTotal.production, lastTotal.production)
+    : null;
+
+  // Yields among meaningful producers (indexable pairs), so a tiny plot doesn't top the list
+  const avgYield = getGlobalAvgYields()[crop] || null;
+  const withYield = producers
+    .filter((p) => isIndexableExplore(p.name, crop))
+    .map((p) => {
+      const series = buildSeries(p.name, crop).filter((r) => r.yield > 0);
+      return { ...p, yield: series[series.length - 1]?.yield || 0 };
     })
+    .filter((p) => p.yield > 0)
+    .sort((a, b) => b.yield - a.yield);
+
+  const yields: string[] = [];
+  if (withYield.length >= 2) {
+    const hi = withYield[0];
+    const lo = withYield[withYield.length - 1];
+    yields.push(`Among the main producers, ${link(hi)} has the highest yield at ${hi.yield.toLocaleString()} hg/ha, while ${link(lo)} has the lowest at ${lo.yield.toLocaleString()} hg/ha.`);
+  }
+  if (avgYield) yields.push(`The average yield across all African producers is ${avgYield.toLocaleString()} hg/ha.`);
+
+  // Fastest growers among the top 10
+  const growers = producers.slice(0, 10)
+    .map((p) => {
+      const s = buildSeries(p.name, crop).filter((r) => r.production > 0);
+      return { ...p, growth: s.length > 1 ? changePct(s[0].production, s[s.length - 1].production) : null };
+    })
+    .filter((g): g is typeof g & { growth: number } => g.growth !== null && g.growth > 0)
+    .sort((a, b) => b.growth - a.growth)
+    .slice(0, 3);
+
+  const trend: string[] = [];
+  if (continentGrowth !== null) {
+    trend.push(`Total African ${cropName} output ${continentGrowth >= 0 ? "rose" : "fell"} ${pct(continentGrowth)} from ${firstTotal.year} to ${lastTotal.year}, from ${kt(firstTotal.production)} to ${kt(lastTotal.production)} thousand tonnes.`);
+  }
+  if (growers.length > 0) {
+    trend.push(`Among ${producers.length > 10 ? "the ten largest producers" : "its producers"}, output grew fastest in ${listSentence(growers.map((g) => `${link(g)} (up ${pct(g.growth, 0)})`))}.`);
+  }
+
+  // Output by region
+  const regionOf = new Map((getCountries() as (ResolvedCountry & { region?: string })[]).map((c) => [c.code, c.region]));
+  const byRegion = new Map<string, number>();
+  for (const p of producers) {
+    const r = regionOf.get(p.code);
+    if (r) byRegion.set(r, (byRegion.get(r) || 0) + p.production);
+  }
+  const regions = Array.from(byRegion.entries()).sort((x, y) => y[1] - x[1]);
+  const regionSentence = regions.length > 1
+    ? `${escapeHtml(regions[0][0])} grows ${pct((regions[0][1] / total) * 100)} of African ${cropName}, followed by ${listSentence(regions.slice(1).map(([r, v]) => `${escapeHtml(r)} (${pct((v / total) * 100)})`))}.`
+    : regions.length === 1
+      ? `All tracked African ${cropName} production is in ${escapeHtml(regions[0][0])}.`
+      : "";
+
+  const rows = producers.slice(0, 15)
+    .map((p, i) => `<tr><td>${i + 1}</td><td>${link(p)}</td><td>${p.production.toLocaleString()}</td><td>${pct(p.share * 100)}</td></tr>`)
     .join("");
 
+  const ranking = RANKING_CROP_LIST.includes(crop)
+    ? ` See where these producers stand worldwide in the <a href="/rankings/${encodeURIComponent(crop)}">global ${cropName} production ranking</a>.`
+    : "";
+
   return `
-    <h1>${crop} Production Data Across Africa</h1>
-    <p>${countries[0].country} is the largest producer of ${crop} in this dataset, at ${countries[0].production.toLocaleString()} thousand tonnes in the most recent year on record, across ${countries.length} producing countries tracked.</p>
+    <nav aria-label="Breadcrumb"><a href="/">Home</a> › <a href="/crops">Crops</a> › ${cropName}</nav>
+    <h1>${cropName} Production Data Across Africa</h1>
+    <p>Africa produced ${kt(total)} thousand tonnes of ${cropName} in the most recent year on record, across ${producers.length} producing countries. ${link(top)} is the largest producer, with ${pct(top.share * 100)} of the continent's output.</p>
+    <h2>Africa's largest ${cropName} producers</h2>
+    <p>${producers.length > 3 ? `The top three producers, ${listSentence(producers.slice(0, 3).map(link))}, account for ${pct(top3Share * 100)} of African ${cropName} output.` : ""}${ranking}</p>
     <table>
-      <thead><tr><th>Country</th><th>Latest Production (K tonnes)</th></tr></thead>
+      <thead><tr><th>Rank</th><th>Country</th><th>Latest Production (K tonnes)</th><th>Share of African output</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <p>Source: FAOSTAT and World Bank, via Afrixplorer. Last updated ${lastUpdatedDate()}.</p>
+    ${yields.length > 0 ? `<h2>${cropName} yields across Africa</h2>\n    <p>${yields.join(" ")}</p>` : ""}
+    ${regionSentence ? `<h2>Where in Africa ${cropName} is grown</h2>\n    <p>${regionSentence}</p>` : ""}
+    ${trend.length > 0 ? `<h2>${cropName} production trend</h2>\n    <p>${trend.join(" ")}</p>` : ""}
+    <h2>Explore more</h2>
+    <p>Browse <a href="/crops">all ${getCrops().length} crops</a> or <a href="/countries">all 54 African countries</a>. Source: FAOSTAT and World Bank, via Afrixplorer. Last updated ${lastUpdatedDate()}.</p>
   `;
 }
 

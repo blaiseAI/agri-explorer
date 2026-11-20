@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderRankingsContent, renderExploreContent } from "./content";
+import { renderRankingsContent, renderExploreContent, renderCountryContent, renderCropContent } from "./content";
 import { resolveCountry } from "./resolve";
 import { isIndexableExplore } from "./indexing";
 import type { GlobalRankingRow } from "./data";
@@ -134,5 +134,95 @@ describe("renderExploreContent", () => {
 
   it("returns an empty string when the country has no data for the crop", () => {
     expect(renderExploreContent(nigeria, "Unobtainium")).toBe("");
+  });
+});
+
+function proseWords(html: string): number {
+  return html.replace(/<table[\s\S]*?<\/table>/g, "").replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
+}
+
+function exploreLinksAreIndexable(html: string) {
+  for (const [, code, crop] of html.matchAll(/href="\/explore\/([A-Z]{3})\/([^"]+)"/g)) {
+    expect(isIndexableExplore(resolveCountry(code)!.name, decodeURIComponent(crop)), `${code}/${crop}`).toBe(true);
+  }
+}
+
+describe("renderCountryContent", () => {
+  const nigeria = resolveCountry("NGA")!;
+  const html = renderCountryContent(nigeria);
+
+  it("has one H1 and several H2 sections", () => {
+    expect((html.match(/<h1>/g) || []).length).toBe(1);
+    expect((html.match(/<h2>/g) || []).length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("renders a breadcrumb through the countries hub", () => {
+    const nav = html.match(/<nav aria-label="Breadcrumb">[\s\S]*?<\/nav>/)?.[0] || "";
+    expect(nav).toContain('href="/"');
+    expect(nav).toContain('href="/countries"');
+  });
+
+  it("states the real number of tracked crops, not the table length", () => {
+    expect(html).not.toMatch(/produces 15\+ tracked crops/);
+    expect(html).toMatch(/\d+ crops? tracked/);
+  });
+
+  it("describes agriculture's role in the economy from World Bank data", () => {
+    expect(html).toMatch(/% of GDP/);
+    expect(html).toMatch(/employ/i);
+  });
+
+  it("names crops where the country leads Africa", () => {
+    expect(html).toMatch(/Africa's largest producer of/);
+  });
+
+  it("links to other countries in the same region", () => {
+    const links = (html.match(/href="\/country\/[A-Z]{3}"/g) || []).filter((l) => !l.includes("NGA"));
+    expect(links.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("links only to indexable explore pages", () => exploreLinksAreIndexable(html));
+
+  it("has substantially more text than the bare table", () => {
+    expect(proseWords(html)).toBeGreaterThanOrEqual(180);
+  });
+});
+
+describe("renderCropContent", () => {
+  const html = renderCropContent("Cassava");
+
+  it("has one H1 and several H2 sections", () => {
+    expect((html.match(/<h1>/g) || []).length).toBe(1);
+    expect((html.match(/<h2>/g) || []).length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("renders a breadcrumb through the crops hub", () => {
+    const nav = html.match(/<nav aria-label="Breadcrumb">[\s\S]*?<\/nav>/)?.[0] || "";
+    expect(nav).toContain('href="/crops"');
+  });
+
+  it("counts every producing country, not just the table rows", () => {
+    expect(html).not.toMatch(/across 15 producing countries/);
+    expect(html).toMatch(/3\d producing countries/); // Cassava has 39 African producers
+  });
+
+  it("states total African output, concentration and the trend", () => {
+    expect(html).toMatch(/Africa produced [\d,.]+ thousand tonnes of Cassava/);
+    expect(html).toMatch(/top three producers/i);
+    expect(html).toMatch(/since 2010|from 2010/);
+  });
+
+  it("compares yields across producers", () => {
+    expect(html).toMatch(/highest yield/i);
+  });
+
+  it("links to the world ranking when the crop has one", () => {
+    expect(html).toContain('href="/rankings/Cassava"');
+  });
+
+  it("links only to indexable explore pages", () => exploreLinksAreIndexable(html));
+
+  it("has substantially more text than the bare table", () => {
+    expect(proseWords(html)).toBeGreaterThanOrEqual(180);
   });
 });
