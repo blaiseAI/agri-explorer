@@ -310,7 +310,9 @@ export default function CropDetail() {
       </div>
 
       {/* Year range slider */}
-      {allYears.length > 2 && yearRange !== null && (
+      {/* Render on the first paint with data (full range by default) rather than after the
+          effect sets yearRange; appearing a frame later pushed the KPIs down (CLS). */}
+      {allYears.length > 2 && (
         <Card>
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between mb-3">
@@ -323,7 +325,7 @@ export default function CropDetail() {
               min={0}
               max={allYears.length - 1}
               step={1}
-              value={yearRange}
+              value={[startIdx, endIdx]}
               onValueChange={(val) => setYearRange(val as [number, number])}
               className="w-full"
               data-testid="year-range-slider"
