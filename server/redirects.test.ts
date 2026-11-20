@@ -101,3 +101,30 @@ describe("canonicalRedirect — trailing slash", () => {
     expect(next).toHaveBeenCalled();
   });
 });
+
+describe("canonicalRedirect — single hop", () => {
+  it("strips a trailing slash and canonicalizes an explore URL in one redirect", () => {
+    const { req, res, next, redirectCalls } = mockReqRes("/explore/nigeria/cassava/?utm_source=x");
+    req.path = "/explore/nigeria/cassava/";
+    canonicalRedirect(req, res, next);
+    expect(redirectCalls).toEqual([[301, "/explore/NGA/Cassava?utm_source=x"]]);
+  });
+
+  it("strips a trailing slash and canonicalizes a country URL in one redirect", () => {
+    const { req, res, next, redirectCalls } = mockReqRes("/country/nigeria/");
+    canonicalRedirect(req, res, next);
+    expect(redirectCalls).toEqual([[301, "/country/NGA"]]);
+  });
+
+  it("strips a trailing slash and canonicalizes a rankings URL in one redirect", () => {
+    const { req, res, next, redirectCalls } = mockReqRes("/rankings/rice//");
+    canonicalRedirect(req, res, next);
+    expect(redirectCalls).toEqual([[301, "/rankings/Rice"]]);
+  });
+
+  it("still strips a trailing slash on an unknown crop without other changes", () => {
+    const { req, res, next, redirectCalls } = mockReqRes("/rankings/Unobtainium/");
+    canonicalRedirect(req, res, next);
+    expect(redirectCalls).toEqual([[301, "/rankings/Unobtainium"]]);
+  });
+});

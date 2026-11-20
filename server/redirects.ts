@@ -16,56 +16,44 @@ export function wwwRedirect(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
- * 301-redirects non-canonical country/crop identifiers to their canonical form
- * (ISO3 code for countries, exact stored casing for crops) before the request
- * reaches SEO injection or the SPA catch-all. Unknown identifiers fall through
- * unchanged so the existing 404 handling in server/seo.ts's isKnownRoute still applies.
+ * 301-redirects non-canonical URLs to their canonical form in a single hop:
+ * trailing slashes are stripped, and country/crop identifiers are normalized
+ * (ISO3 code for countries, exact stored casing for crops). Doing both at once
+ * avoids redirect chains like /explore/nigeria/cassava/ -> /explore/nigeria/cassava
+ * -> /explore/NGA/Cassava. Unknown identifiers are left unchanged so the existing
+ * 404 handling in server/seo.ts's isKnownRoute still applies.
  */
 export function canonicalRedirect(req: Request, res: Response, next: NextFunction) {
   const path = req.path;
+  if (path.startsWith("/api/")) return next();
 
   // Strip trailing slashes so /country/NGA/ and /country/NGA aren't two indexable URLs.
-  if (path.length > 1 && path.endsWith("/") && !path.startsWith("/api/")) {
-    const stripped = path.replace(/\/+$/, "") || "/";
-    return res.redirect(301, `${stripped}${req.url.slice(path.length)}`);
-  }
+  const stripped = path.length > 1 ? path.replace(/\/+$/, "") || "/" : path;
+  const canonical = canonicalizeIdentifiers(stripped);
 
+  if (canonical !== path) {
+    return res.redirect(301, `${canonical}${req.url.slice(path.length)}`);
+  }
+  next();
+}
+
+/** Returns the path with country/crop segments in canonical form, or unchanged if unrecognized. */
+function canonicalizeIdentifiers(path: string): string {
   const parts = path.split("/").filter(Boolean);
 
   if (parts[0] === "country" && parts.length === 2) {
     const country = resolveCountry(parts[1]);
-    if (country && parts[1] !== country.code) {
-      return res.redirect(301, `/country/${country.code}${req.url.slice(path.length)}`);
-    }
-  } else if (parts[0] === "crop" && parts.length === 2) {
-    const canonical = resolveCrop(parts[1]);
-    if (canonical) {
-      const decoded = decodeURIComponent(parts[1]);
-      if (decoded !== canonical) {
-        return res.redirect(301, `/crop/${encodeURIComponent(canonical)}${req.url.slice(path.length)}`);
-      }
-    }
+    if (country && parts[1] !== country.code) return `/country/${country.code}`;
+  } else if ((parts[0] === "crop" || parts[0] === "rankings") && parts.length === 2) {
+    const crop = resolveCrop(parts[1]);
+    if (crop && decodeURIComponent(parts[1]) !== crop) return `/${parts[0]}/${encodeURIComponent(crop)}`;
   } else if (parts[0] === "explore" && parts.length === 3) {
     const country = resolveCountry(parts[1]);
-    const canonicalCrop = resolveCrop(parts[2]);
-    if (country && canonicalCrop) {
-      const decodedCrop = decodeURIComponent(parts[2]);
-      if (parts[1] !== country.code || decodedCrop !== canonicalCrop) {
-        return res.redirect(
-          301,
-          `/explore/${country.code}/${encodeURIComponent(canonicalCrop)}${req.url.slice(path.length)}`
-        );
-      }
-    }
-  } else if (parts[0] === "rankings" && parts.length === 2) {
-    const canonical = resolveCrop(parts[1]);
-    if (canonical) {
-      const decoded = decodeURIComponent(parts[1]);
-      if (decoded !== canonical) {
-        return res.redirect(301, `/rankings/${encodeURIComponent(canonical)}${req.url.slice(path.length)}`);
-      }
+    const crop = resolveCrop(parts[2]);
+    if (country && crop && (parts[1] !== country.code || decodeURIComponent(parts[2]) !== crop)) {
+      return `/explore/${country.code}/${encodeURIComponent(crop)}`;
     }
   }
 
-  next();
+  return path;
 }
