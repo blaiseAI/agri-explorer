@@ -169,11 +169,13 @@ export default function Dashboard() {
         <DashboardHero />
         {/* Reserve the data-freshness row so the KPIs don't shift when it appears. */}
         <Skeleton className="h-4 w-72" />
-        {/* Sized to match the loaded KPI row (16px heading, 116px cards) so the grid below doesn't shift. */}
+        {/* Sized to match the loaded KPI row: a 16px heading and 100px cards. KPICard keeps every
+            row on one line, so it is 100px at any width and in either font; measured on the live
+            site, the row is 236px on mobile/tablet and 124px on desktop in both states. */}
         <div className="space-y-2">
           <Skeleton className="h-4 w-48" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-[116px] rounded-xl" />)}
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-[100px] rounded-xl" />)}
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -788,8 +790,10 @@ function KPICard({ label, value, subtext, cagr, clickable }: { label: string; va
   return (
     <Card className={clickable ? "hover:border-primary/30 transition-colors cursor-pointer group" : ""}>
       <CardContent className="pt-4 pb-4">
-        <p className="text-xs text-muted-foreground mb-1">{label}</p>
-        <div className="flex items-baseline gap-2">
+        {/* Every row is a single line so the card's height doesn't depend on which font loaded;
+            the dashboard skeleton reserves exactly this height (CLS). */}
+        <p className="text-xs text-muted-foreground mb-1 truncate" title={label}>{label}</p>
+        <div className="flex items-baseline gap-2 whitespace-nowrap overflow-hidden">
           <span className="text-xl font-semibold tabular-nums tracking-tight">{value}</span>
           {cagr !== undefined && (
             <span className={`text-[11px] font-medium tabular-nums flex items-center gap-0.5 ${
@@ -801,7 +805,7 @@ function KPICard({ label, value, subtext, cagr, clickable }: { label: string; va
           )}
         </div>
         <div className="flex items-center justify-between mt-0.5">
-          <p className="text-xs text-muted-foreground">{subtext}</p>
+          <p className="text-xs text-muted-foreground truncate">{subtext}</p>
           {clickable && (
             <span className="text-xs text-primary font-medium flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               Explore <ArrowRight size={10} />
