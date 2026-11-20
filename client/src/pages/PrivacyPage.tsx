@@ -100,7 +100,7 @@ export default function PrivacyPage() {
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">9. Contact</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Questions about this Privacy Policy or your data: <a href="mailto:afrixplorerbiz@gmail.com" className="text-primary hover:underline">afrixplorerbiz@gmail.com</a>
+          Questions about this Privacy Policy or your data: <a href="mailto:afrixplorerbiz@gmail.com" className="text-primary underline underline-offset-2 hover:no-underline">afrixplorerbiz@gmail.com</a>
         </p>
       </section>
     </div>

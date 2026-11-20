@@ -116,7 +116,7 @@ export default function TermsPage() {
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">10. Contact</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Questions about these Terms: <a href="mailto:afrixplorerbiz@gmail.com" className="text-primary hover:underline">afrixplorerbiz@gmail.com</a>
+          Questions about these Terms: <a href="mailto:afrixplorerbiz@gmail.com" className="text-primary underline underline-offset-2 hover:no-underline">afrixplorerbiz@gmail.com</a>
         </p>
       </section>
     </div>

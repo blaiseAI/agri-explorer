@@ -144,51 +144,91 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
-      <footer className="border-t mt-auto bg-muted/20">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 md:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-            {/* Branding & Disclaimer */}
-            <div className="md:col-span-3 space-y-4">
-              <div className="flex items-center gap-2.5 font-bold text-foreground">
-                <img src="/logo.png" alt="" width={22} height={22} className="object-contain scale-125" />
-                <span className="text-lg tracking-tight">Afrixplorer</span>
-              </div>
-              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                Afrixplorer surfaces agricultural data signals to support research and exploration, not to provide financial advice. While we strive to ensure our data—sourced from FAOSTAT, the World Bank, and UN Comtrade—is complete and accurate, the complex nature of processing global agricultural datasets means we cannot be held liable for any omissions or inaccuracies. Always conduct independent due diligence before making investment decisions.
-              </p>
-            </div>
-
-            {/* Links & Attribution */}
-            <div className="flex flex-col gap-4 text-sm font-medium md:items-end md:text-right">
-              {isMonetizationEnabled && (
-                <Link href="/pricing" className="text-muted-foreground hover:text-primary transition-colors">
-                  Pricing
-                </Link>
-              )}
-              <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                About
-              </Link>
-              <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
-                Terms
-              </Link>
-              <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
-                Privacy
-              </Link>
-              <a
-                href="https://blaiseai.github.io/portfolio/"
-                target="_blank"
-                rel="noopener"
-                className="text-muted-foreground hover:text-primary transition-colors"
+      <footer className="mt-auto border-t bg-muted/20 overflow-hidden">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-14 md:pt-20">
+          {/* Facts line + entry points */}
+          <div className="flex flex-col items-center text-center gap-5">
+            <p className="font-mono text-[11px] sm:text-xs tracking-[0.08em] text-muted-foreground">
+              54 countries · 136 crops · FAOSTAT &amp; World Bank<span className="hidden sm:inline"> · refreshed every two weeks</span>
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Link
+                href="/countries"
+                className="inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity"
               >
-                Created by Blaise
-              </a>
+                <Globe size={14} aria-hidden="true" /> Browse countries
+              </Link>
+              <Link
+                href="/crops"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium hover:border-primary/40 hover:text-primary transition-colors"
+              >
+                <Wheat size={14} aria-hidden="true" /> Browse crops
+              </Link>
             </div>
           </div>
-          
-          <div className="mt-12 pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} Afrixplorer. All rights reserved.</p>
-            <p>Data sources: FAOSTAT, World Bank, UN Comtrade.</p>
+
+          {/* Brand + links */}
+          <div className="mt-14 md:mt-20 flex flex-col md:flex-row md:items-center md:justify-between gap-5 text-sm">
+            <div className="flex items-center gap-2.5 text-muted-foreground">
+              <img src="/logo.png" alt="" width={18} height={18} className="object-contain scale-125" />
+              <span>
+                <span className="font-semibold text-foreground">Afrixplorer</span> · African crop data, country by country
+              </span>
+            </div>
+            <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-muted-foreground">
+              <Link href="/countries" className="hover:text-foreground transition-colors">Countries</Link>
+              <Link href="/crops" className="hover:text-foreground transition-colors">Crops</Link>
+              <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
+              {isMonetizationEnabled && (
+                <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+              )}
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+            </nav>
           </div>
+
+          <p className="mt-6 max-w-3xl text-[11px] leading-relaxed text-muted-foreground">
+            Afrixplorer surfaces agricultural data signals for research and exploration, not financial advice. Data from FAOSTAT, the World Bank and UN Comtrade is processed in bulk and may contain omissions or inaccuracies; always do your own due diligence before making investment decisions.
+          </p>
+
+          <div className="mt-6 pt-5 border-t border-border/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[11px] text-muted-foreground">
+            <p>&copy; {new Date().getFullYear()} Afrixplorer</p>
+            <a
+              href="https://blaiseai.github.io/portfolio/"
+              target="_blank"
+              rel="noopener"
+              className="hover:text-foreground transition-colors"
+            >
+              Created by <span className="font-medium text-foreground">Blaise</span> ↗
+            </a>
+          </div>
+
+          {/* Oversized wordmark — decorative; an SVG so it always spans the width exactly */}
+          <svg
+            aria-hidden="true"
+            focusable="false"
+            viewBox="0 0 1000 175"
+            className="block w-full mt-8 -mb-[2%] select-none pointer-events-none text-foreground"
+          >
+            <defs>
+              <linearGradient id="footer-wordmark-fade" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="currentColor" stopOpacity="0.09" />
+                <stop offset="100%" stopColor="currentColor" stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
+            <text
+              x="0"
+              y="138"
+              textLength="1000"
+              lengthAdjust="spacingAndGlyphs"
+              fontSize="178"
+              fontWeight="600"
+              letterSpacing="-4"
+              fill="url(#footer-wordmark-fade)"
+            >
+              Afrixplorer
+            </text>
+          </svg>
         </div>
       </footer>
     </div>

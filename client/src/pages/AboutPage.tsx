@@ -41,7 +41,7 @@ export default function AboutPage() {
           "Investment signal" scores and insight text (growth, yield-gap, opportunity, trade, warning) are generated
           programmatically from the underlying time-series data using a fixed, documented scoring formula — not by a
           human analyst, and not by a language model. They are directional signals for further research, not
-          investment advice. See the <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link> for
+          investment advice. See the <Link href="/terms" className="text-primary underline underline-offset-2 hover:no-underline">Terms of Service</Link> for
           the full disclaimer.
         </p>
       </section>
