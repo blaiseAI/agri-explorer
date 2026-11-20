@@ -72,6 +72,13 @@
   --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --destructive-border: hsl(var(--destructive));
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  /* Africa map: sequential green ramp, light -> dark (validated: monotone L, 2:1 vs card) */
+  --map-1: #80bf97;
+  --map-2: #55a374;
+  --map-3: #358659;
+  --map-4: #1f6943;
+  --map-5: #10462c;
+  --map-empty: #e4e0d9;
 }
 
 .dark {
@@ -137,6 +144,13 @@
   --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --destructive-border: hsl(var(--destructive));
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  /* Africa map: low values recede toward the dark surface, high values glow */
+  --map-1: #25603f;
+  --map-2: #348556;
+  --map-3: #4fa572;
+  --map-4: #80c79a;
+  --map-5: #bce8cb;
+  --map-empty: #34302b;
 }
 
 @layer base {

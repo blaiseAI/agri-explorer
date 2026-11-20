@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import AfricaMap from "@/components/africa-map/AfricaMap";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
@@ -160,6 +161,11 @@ export default function Dashboard() {
     return showAllCrops ? sortedCrops : sortedCrops.slice(0, 12);
   }, [sortedCrops, cropSearch, showAllCrops]);
 
+  const countryNames = useMemo(
+    () => Object.fromEntries((countriesData ?? []).map((c) => [c.code, c.name])),
+    [countriesData],
+  );
+
   // Top 4 crops by production for KPI cards
   const topKpiCrops = useMemo(() => sortedCrops.slice(0, 4), [sortedCrops]);
 
@@ -227,6 +233,9 @@ export default function Dashboard() {
         ))}
         </div>
       </div>
+
+      {/* Africa map */}
+      <AfricaMap crops={sortedCrops} countryNames={countryNames} latestYear={latestYear} />
 
       {/* Pro upgrade banner */}
       {isMonetizationEnabled && (
