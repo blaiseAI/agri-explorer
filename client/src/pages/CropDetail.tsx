@@ -326,6 +326,7 @@ export default function CropDetail() {
               max={allYears.length - 1}
               step={1}
               value={[startIdx, endIdx]}
+              thumbLabels={["Start year", "End year"]}
               onValueChange={(val) => setYearRange(val as [number, number])}
               className="w-full"
               data-testid="year-range-slider"
@@ -363,14 +364,14 @@ export default function CropDetail() {
             <p className="text-xs text-muted-foreground mb-1">Yield vs Africa Average</p>
             {yieldGap && Number(yieldGap) > 0 ? (
               <>
-                <span className="text-xl font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+                <span className="text-xl font-semibold tabular-nums text-amber-700 dark:text-amber-400">
                   -{yieldGap}%
                 </span>
                 <p className="text-xs text-muted-foreground mt-0.5">below Africa avg ({globalAvgYield?.toLocaleString()})</p>
               </>
             ) : (
               <>
-                <span className="text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                <span className="text-xl font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
                   Above avg
                 </span>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -395,7 +396,7 @@ export default function CropDetail() {
                   </TooltipContent>
                 </Tooltip>
               </p>
-              <span className="text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+              <span className="text-xl font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
                 ~${revenuePerHa.toLocaleString()}/ha
               </span>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -620,7 +621,7 @@ export default function CropDetail() {
                 <Link key={c.name} href={`/explore/${countryData?.countryInfo?.code || country}/${c.name}`}>
                   <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer">
                     {c.name}
-                    {c.revenuePerHa > 0 && <span className="text-emerald-600 dark:text-emerald-400 text-[10px]">${c.revenuePerHa.toLocaleString()}/ha</span>}
+                    {c.revenuePerHa > 0 && <span className="text-emerald-700 dark:text-emerald-400 text-[10px]">${c.revenuePerHa.toLocaleString()}/ha</span>}
                     <ChevronRight size={10} className="text-muted-foreground" />
                   </span>
                 </Link>
@@ -673,7 +674,7 @@ export default function CropDetail() {
                           ${op.revenuePerHa.toLocaleString()}/ha
                         </span>
                       )}
-                      <span className={op.prodGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+                      <span className={op.prodGrowth >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}>
                         {op.prodGrowth >= 0 ? "+" : ""}{Number(op.prodGrowth).toFixed(1)}% growth
                       </span>
                     </div>
@@ -701,7 +702,7 @@ function SummaryCard({ label, value, growth, period }: { label: string; value: s
         <p className="text-xl font-semibold tabular-nums tracking-tight">{value}</p>
         <div className="flex items-center gap-1 mt-1">
           <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-            isPositive ? "text-emerald-600 dark:text-emerald-400" : growth < 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"
+            isPositive ? "text-emerald-700 dark:text-emerald-400" : growth < 0 ? "text-red-700 dark:text-red-400" : "text-muted-foreground"
           }`}>
             {isPositive ? <TrendingUp size={11} /> : growth < 0 ? <TrendingDown size={11} /> : null}
             {isPositive ? "+" : ""}{growth}% total

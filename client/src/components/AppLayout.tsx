@@ -178,7 +178,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           
-          <div className="mt-12 pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground/60">
+          <div className="mt-12 pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground">
             <p>&copy; {new Date().getFullYear()} Afrixplorer. All rights reserved.</p>
             <p>Data sources: FAOSTAT, World Bank, UN Comtrade.</p>
           </div>

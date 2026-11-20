@@ -14,7 +14,7 @@ export default function TermsPage() {
       </div>
 
       <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-400" />
         <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
           This document is a general-purpose template and has not been reviewed by a lawyer. Do not rely on it as a
           complete legal agreement without independent legal review for compliance with Alberta and Canadian law

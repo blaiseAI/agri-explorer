@@ -55,7 +55,7 @@ function YieldTooltip({ active, payload, label, globalAvg }: any) {
         </p>
       )}
       {globalAvg && (
-        <p className="text-muted-foreground/70 mt-0.5 flex items-center gap-1">
+        <p className="text-muted-foreground mt-0.5 flex items-center gap-1">
           <span className="inline-block w-3 border-t border-dashed border-muted-foreground"></span>
           Avg: <span className="tabular-nums">{globalAvg.toLocaleString()} hg/ha</span>
         </p>
@@ -506,7 +506,7 @@ export default function CropView() {
                       <p className="text-muted-foreground">Yield</p>
                       <p className="font-medium tabular-nums">{c.latestYield.toLocaleString()}</p>
                       {c.yieldGap > 10 && (
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400">-{Number(c.yieldGap).toFixed(0)}% gap</span>
+                        <span className="text-[10px] text-amber-700 dark:text-amber-400">-{Number(c.yieldGap).toFixed(0)}% gap</span>
                       )}
                     </div>
                     <div>
@@ -528,9 +528,9 @@ export default function CropView() {
                       )}
                     </div>
                   ) : c.tradeData && Object.keys(c.tradeData).length > 0 ? (
-                    <div className="text-[10px] text-muted-foreground/60 px-2">Export: &lt;$0.1M (domestic market)</div>
+                    <div className="text-[10px] text-muted-foreground px-2">Export: &lt;$0.1M (domestic market)</div>
                   ) : (
-                    <div className="text-[10px] text-muted-foreground/60 px-2">No export data available</div>
+                    <div className="text-[10px] text-muted-foreground px-2">No export data available</div>
                   )}
                   {c.revenuePerHa > 0 && (
                     <div className="flex items-center gap-1.5 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded px-2 py-1">
@@ -591,7 +591,7 @@ function GrowthIndicator({ value }: { value: number }) {
   const isPositive = value > 0;
   return (
     <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium ${
-      isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+      isPositive ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
     }`}>
       {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
       {isPositive ? "+" : ""}{value}%

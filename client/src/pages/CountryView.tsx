@@ -327,6 +327,7 @@ export default function CountryView() {
               max={maxYearIdx}
               step={1}
               value={yearRange}
+              thumbLabels={["Start year", "End year"]}
               onValueChange={(val) => setYearRange(val as [number, number])}
               className="w-full"
               data-testid="year-range-slider"
@@ -494,7 +495,7 @@ export default function CountryView() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Ship size={14} className="text-amber-600 dark:text-amber-400" />
+              <Ship size={14} className="text-amber-700 dark:text-amber-400" />
               Import Trade (top imported crops)
             </CardTitle>
           </CardHeader>
@@ -562,7 +563,7 @@ export default function CountryView() {
                             ${tc.revenuePerHa.toLocaleString()}/ha
                           </span>
                         )}
-                        <span className={tc.prodGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+                        <span className={tc.prodGrowth >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}>
                           {tc.prodGrowth >= 0 ? "+" : ""}{tc.prodGrowth}% growth
                         </span>
                       </div>
@@ -644,7 +645,7 @@ export default function CountryView() {
                         <div className="flex items-center gap-1.5">
                           <p className="font-medium tabular-nums">{crop.latestYield.toLocaleString()} hg/ha</p>
                           {yieldGap !== null && yieldGap > 10 && (
-                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">↓{yieldGap.toFixed(0)}%</span>
+                            <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">↓{yieldGap.toFixed(0)}%</span>
                           )}
                         </div>
                         <GrowthBadge value={crop.yieldGrowth} />
@@ -660,7 +661,7 @@ export default function CountryView() {
                             <SheetTrigger asChild>
                               <button 
                                 onClick={(e) => e.stopPropagation()}
-                                className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 flex items-center gap-1 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+                                className="ml-auto min-h-6 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 flex items-center gap-1 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
                                 title="View live market news"
                               >
                                 <Newspaper size={9} />
@@ -732,7 +733,7 @@ function GrowthBadge({ value }: { value: number }) {
   const isPositive = value > 0;
   return (
     <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium mt-0.5 ${
-      isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+      isPositive ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
     }`}>
       {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
       {isPositive ? "+" : ""}{value}%

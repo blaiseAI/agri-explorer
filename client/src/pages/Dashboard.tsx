@@ -205,7 +205,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 h-4 text-xs text-muted-foreground" data-testid="data-freshness">
           <RefreshCw size={12} />
           <span>Data last updated: {formatDate(lastUpdated)}</span>
-          <span className="text-muted-foreground/50">·</span>
+          <span className="text-muted-foreground/50" aria-hidden="true">·</span>
           <span>Latest year: {latestYear}</span>
         </div>
       )}
@@ -570,16 +570,16 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
 
   const stabilityColor = (v: number | null) => {
     if (v === null) return "text-muted-foreground";
-    if (v < 25) return "text-red-600 dark:text-red-400";
-    if (v < 50) return "text-amber-600 dark:text-amber-400";
-    return "text-emerald-600 dark:text-emerald-400";
+    if (v < 25) return "text-red-700 dark:text-red-400";
+    if (v < 50) return "text-amber-700 dark:text-amber-400";
+    return "text-emerald-700 dark:text-emerald-400";
   };
 
   const logisticsColor = (v: number | null) => {
     if (v === null) return "text-muted-foreground";
-    if (v < 2.5) return "text-red-600 dark:text-red-400";
-    if (v < 3.5) return "text-amber-600 dark:text-amber-400";
-    return "text-emerald-600 dark:text-emerald-400";
+    if (v < 2.5) return "text-red-700 dark:text-red-400";
+    if (v < 3.5) return "text-amber-700 dark:text-amber-400";
+    return "text-emerald-700 dark:text-emerald-400";
   };
 
   const handleExportCSV = () => {
@@ -630,7 +630,7 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <Select value={region} onValueChange={setRegion}>
-          <SelectTrigger className="w-[160px] h-8 text-xs">
+          <SelectTrigger className="w-[160px] h-8 text-xs" aria-label="Filter by region">
             <SelectValue placeholder="Region" />
           </SelectTrigger>
           <SelectContent>
@@ -663,6 +663,7 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
             <span className="text-[11px] text-muted-foreground whitespace-nowrap">Stability ≥{minStability}</span>
             <Slider
               value={[minStability]}
+              thumbLabels={["Minimum stability score"]}
               onValueChange={([v]) => setMinStability(v)}
               max={100}
               step={5}
@@ -674,6 +675,7 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
             <span className="text-[11px] text-muted-foreground whitespace-nowrap">Logistics ≥{minLogistics.toFixed(1)}</span>
             <Slider
               value={[minLogistics * 10]}
+              thumbLabels={["Minimum logistics score"]}
               onValueChange={([v]) => setMinLogistics(v / 10)}
               max={50}
               step={5}
@@ -755,7 +757,7 @@ function LeaderboardSection({ lastUpdated }: { lastUpdated?: string }) {
                           )}
                         </span>
                       </td>
-                      <td className={`px-3 py-2 tabular-nums text-xs ${e.prodGrowth >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                      <td className={`px-3 py-2 tabular-nums text-xs ${e.prodGrowth >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                         {e.prodGrowth >= 0 ? "+" : ""}{Number(e.prodGrowth).toFixed(1)}%
                       </td>
                       <td className="px-3 py-2 tabular-nums text-xs">
@@ -800,7 +802,7 @@ function KPICard({ label, value, subtext, cagr, clickable }: { label: string; va
           <span className="text-xl font-semibold tabular-nums tracking-tight">{value}</span>
           {cagr !== undefined && (
             <span className={`text-[11px] font-medium tabular-nums flex items-center gap-0.5 ${
-              cagr >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+              cagr >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'
             }`}>
               {cagr >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
               {cagr >= 0 ? '+' : ''}{cagr}%/yr

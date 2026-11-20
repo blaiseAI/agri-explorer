@@ -5,8 +5,11 @@ import { cn } from "@/lib/utils"
 
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, value, defaultValue, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> & {
+    /** Accessible name for each thumb, in order (screen readers and Lighthouse need one per thumb). */
+    thumbLabels?: string[]
+  }
+>(({ className, value, defaultValue, thumbLabels, ...props }, ref) => {
   // Determine how many thumbs to render based on value/defaultValue
   const thumbCount = Array.isArray(value)
     ? value.length
@@ -31,6 +34,7 @@ const Slider = React.forwardRef<
       {Array.from({ length: thumbCount }).map((_, i) => (
         <SliderPrimitive.Thumb
           key={i}
+          aria-label={thumbLabels?.[i]}
           className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
         />
       ))}

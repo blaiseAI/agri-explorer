@@ -7,6 +7,7 @@ import { isIndexableExplore, RANKING_CROP_LIST } from "./indexing";
 import { generateOGImage } from "./og";
 import { generateEmbedChart } from "./embed";
 import Parser from "rss-parser";
+import { cachedByDataVersion } from "./apiCache";
 
 const parser = new Parser({
   customFields: {
@@ -307,8 +308,10 @@ export async function registerRoutes(
   });
 
   // Leaderboard — top 100 ranked crop×country opportunities
+  const leaderboard = cachedByDataVersion(generateLeaderboard);
   app.get("/api/leaderboard", (_req, res) => {
-    res.json(generateLeaderboard());
+    res.set("Cache-Control", "public, max-age=3600");
+    res.json(leaderboard());
   });
 
   // Top crops for investment in a country
@@ -325,7 +328,13 @@ export async function registerRoutes(
   });
 
   // Overview dashboard data
+  const overview = cachedByDataVersion(buildOverview);
   app.get("/api/overview", (_req, res) => {
+    res.set("Cache-Control", "public, max-age=3600");
+    res.json(overview());
+  });
+
+  function buildOverview() {
     const CROP_DATA = getCropData();
     const YEARS = getYears();
     const metadata = getMetadata();
@@ -368,7 +377,7 @@ export async function registerRoutes(
       }
     }
 
-    res.json({
+    return {
       totalProduction,
       countryProduction,
       topInsights,
@@ -379,7 +388,12 @@ export async function registerRoutes(
       lastUpdated: metadata.lastUpdated,
       sources: metadata.sources,
       latestYear,
-    });
+    };
+  }
+
+  // Warm the caches off the request path so the first visitor after a deploy doesn't wait.
+  setImmediate(() => {
+    try { overview(); leaderboard(); } catch (e) { console.warn("[api] cache warm-up failed:", e); }
   });
 
   // Get RSS News

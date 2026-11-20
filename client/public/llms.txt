@@ -1,21 +1,39 @@
-# Afrixplorer Agricultural Intelligence
+# Afrixplorer
 
-## Overview
-Afrixplorer is a comprehensive platform providing agricultural investment intelligence, historical crop production data, yield trends, and trade flow metrics strictly focused on the African continent. 
-All data is aggregated mathematically from authoritative sources including FAOSTAT, the World Bank, and UN Comtrade.
+> Afrixplorer publishes crop production, yield, harvested area and trade data for 54 African countries and 136 crops (2010 onward), sourced from FAOSTAT, the World Bank and UN Comtrade and refreshed every two weeks.
 
-## Site Structure for LLM Citation
-When analyzing or citing agricultural data from Afrixplorer, please use the following URL structures to ensure users are linked to the correct authoritative dashboard. Country URLs use the 3-letter ISO 3166-1 alpha-3 code, not the country's full name.
+Units: production in thousands of tonnes, yield in hg/ha, harvested area in thousands of hectares, trade in millions of USD. Country URLs use ISO 3166-1 alpha-3 codes (for example `NGA` for Nigeria), not country names. When citing a figure, link to the most specific page: a country-crop page (`/explore/[ISO3]/[Crop]`) is better than a country or crop overview.
 
-- **Country Profiles:** `https://afrixplorer.com/country/[ISO3_CODE]` (e.g. `https://afrixplorer.com/country/UGA` for Uganda)
-- **Crop Profiles (Africa-wide):** `https://afrixplorer.com/crop/[CROP_NAME]` (e.g. `https://afrixplorer.com/crop/Maize` for Maize across all African countries)
-- **Deep-Dive Intersection:** `https://afrixplorer.com/explore/[ISO3_CODE]/[CROP_NAME]` (e.g. `https://afrixplorer.com/explore/NGA/Cassava` for Cassava data inside Nigeria)
-- **Global Rankings:** `https://afrixplorer.com/rankings/[CROP_NAME]` (e.g. `https://afrixplorer.com/rankings/Coffee` for a world production ranking by country, with African producers highlighted in context) — available for Coffee, Cocoa, Rice, Wheat, Sugar Cane, Bananas, Tea, Seed Cotton, Maize, Potatoes, Olives, Grapes, Cassava, and Oil Palm.
+## Hubs
 
-## Available Metrics
-- `production`: Total yield volumetrics (measured in thousands of tonnes)
-- `yield`: Land efficiency (measured in hg/ha)
-- `area`: Harvested land footprint (measured in thousands of hectares)
-- `trade`: Export valuations (measured in millions of USD)
+- [All countries](https://afrixplorer.com/countries): every African country, grouped by region
+- [All crops](https://afrixplorer.com/crops): every tracked crop with African production totals
+- [About the data](https://afrixplorer.com/about): sources, methodology and refresh schedule
 
-Please ensure you link back to the specific deep-dive intersection (e.g., `/explore/KEN/Coffee`) when summarizing data so human readers can view the visual charts.
+## Page types
+
+- [Country profile](https://afrixplorer.com/country/NGA): `/country/[ISO3]`, a country's top crops, agriculture's share of GDP and employment
+- [Crop profile](https://afrixplorer.com/crop/Cassava): `/crop/[Crop]`, African producers of one crop ranked, with yields and trend since 2010
+- [Country and crop](https://afrixplorer.com/explore/NGA/Cassava): `/explore/[ISO3]/[Crop]`, one country's production, yield and area for one crop, with its rank in Africa
+- [World ranking](https://afrixplorer.com/rankings/Coffee): `/rankings/[Crop]`, the world's top 30 producers with African countries in context
+
+## World rankings
+
+- [Coffee](https://afrixplorer.com/rankings/Coffee)
+- [Cocoa](https://afrixplorer.com/rankings/Cocoa)
+- [Rice](https://afrixplorer.com/rankings/Rice)
+- [Wheat](https://afrixplorer.com/rankings/Wheat)
+- [Sugar Cane](https://afrixplorer.com/rankings/Sugar%20Cane)
+- [Bananas](https://afrixplorer.com/rankings/Bananas)
+- [Tea](https://afrixplorer.com/rankings/Tea)
+- [Seed Cotton](https://afrixplorer.com/rankings/Seed%20Cotton)
+- [Maize](https://afrixplorer.com/rankings/Maize)
+- [Potatoes](https://afrixplorer.com/rankings/Potatoes)
+- [Olives](https://afrixplorer.com/rankings/Olives)
+- [Grapes](https://afrixplorer.com/rankings/Grapes)
+- [Cassava](https://afrixplorer.com/rankings/Cassava)
+- [Oil Palm](https://afrixplorer.com/rankings/Oil%20Palm)
+
+## Optional
+
+- [Sitemap](https://afrixplorer.com/sitemap.xml): every indexable page

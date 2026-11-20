@@ -57,9 +57,9 @@ export default function NewsFeed({ query, limit = 3, country }: { query: string;
                       </Badge>
                     )}
                   </div>
-                  <h4 className="text-sm font-medium leading-[1.3] group-hover:text-primary object-cover transition-colors line-clamp-2 break-words text-foreground/90">
+                  <h3 className="text-sm font-medium leading-[1.3] group-hover:text-primary object-cover transition-colors line-clamp-2 break-words text-foreground/90">
                     {item.title?.replace(/ - .*$/, '')}
-                  </h4>
+                  </h3>
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-0.5">
                     <span className="font-semibold text-foreground/70 truncate">{item.source}</span>
                     <span className="shrink-0">•</span>
