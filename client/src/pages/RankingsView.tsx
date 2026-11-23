@@ -8,6 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import { Trophy, ChevronRight } from "lucide-react";
+import { formatTonnes, formatYield } from "@/lib/units";
 
 interface RankingRow {
   rank: number;
@@ -55,7 +56,7 @@ export default function RankingsView() {
         </h1>
         {top && (
           <p className="text-sm text-muted-foreground">
-            {top.country} leads at {top.production.toLocaleString()}K tonnes ({top.year})
+            {top.country} leads at {formatTonnes(top.production)} ({top.year})
           </p>
         )}
       </div>
@@ -70,18 +71,18 @@ export default function RankingsView() {
         <>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Top 10 Producers (thousands of tonnes)</CardTitle>
+              <CardTitle className="text-sm font-medium">Top 10 Producers (tonnes)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v: number) => formatTonnes(v).replace(" t", "")} />
                     <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={100} />
                     <RechartsTooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                      formatter={(val: any) => [`${Number(val).toLocaleString()}K tonnes`, "Production"]}
+                      formatter={(val: any) => [formatTonnes(Number(val)), "Production"]}
                     />
                     <Bar dataKey="production" radius={[0, 4, 4, 0]}>
                       {chartData.map((entry, i) => (
@@ -102,8 +103,8 @@ export default function RankingsView() {
                   <tr className="text-left text-xs text-muted-foreground border-b">
                     <th className="py-2 pr-3">Rank</th>
                     <th className="py-2 pr-3">Country</th>
-                    <th className="py-2 pr-3 text-right">Production (K t)</th>
-                    <th className="py-2 pr-3 text-right">Yield (hg/ha)</th>
+                    <th className="py-2 pr-3 text-right">Production</th>
+                    <th className="py-2 pr-3 text-right">Yield</th>
                     <th className="py-2 pr-3 text-right">YoY</th>
                   </tr>
                 </thead>
@@ -120,8 +121,8 @@ export default function RankingsView() {
                           r.country
                         )}
                       </td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{r.production.toLocaleString()}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{r.yield.toLocaleString()}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums">{formatTonnes(r.production)}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums">{r.yield ? formatYield(r.yield) : "—"}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">
                         {r.yoyPct !== null ? `${r.yoyPct > 0 ? "+" : ""}${r.yoyPct}%` : "—"}
                       </td>
@@ -146,7 +147,7 @@ export default function RankingsView() {
                     <div className="flex items-center justify-between text-sm py-1.5 hover:text-primary cursor-pointer transition-colors">
                       <span>{r.country} — #{r.rank} globally</span>
                       <span className="flex items-center gap-1 text-muted-foreground">
-                        {r.production.toLocaleString()}K t <ChevronRight size={12} />
+                        {formatTonnes(r.production)} <ChevronRight size={12} />
                       </span>
                     </div>
                   </Link>

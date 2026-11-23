@@ -15,6 +15,7 @@ import { ArrowLeft, TrendingUp, TrendingDown, Target, Info, BarChart3, Lightbulb
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
+import { formatArea, formatTonnes, formatYield, yieldTick } from "@/lib/units";
 import { useToast } from "@/hooks/use-toast";
 import { useMonetization } from "@/hooks/useMonetization";
 
@@ -343,19 +344,19 @@ export default function CropDetail() {
       <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${revenuePerHa !== null ? 'md:grid-cols-3 lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
         <SummaryCard
           label="Latest Production"
-          value={`${last?.production?.toLocaleString() || "—"}K t`}
+          value={last?.production ? formatTonnes(last.production) : "—"}
           growth={Number(prodGrowth)}
           period={`${first?.year}-${last?.year}`}
         />
         <SummaryCard
           label="Latest Yield"
-          value={`${last?.yield?.toLocaleString() || "—"} hg/ha`}
+          value={last?.yield ? formatYield(last.yield) : "—"}
           growth={Number(yieldGrowth)}
           period={`${first?.year}-${last?.year}`}
         />
         <SummaryCard
           label="Area Harvested"
-          value={`${last?.area?.toLocaleString() || "—"}K ha`}
+          value={last?.area ? formatArea(last.area) : "—"}
           growth={Number(areaGrowth)}
           period={`${first?.year}-${last?.year}`}
         />
@@ -367,7 +368,7 @@ export default function CropDetail() {
                 <span className="text-xl font-semibold tabular-nums text-amber-700 dark:text-amber-400">
                   -{yieldGap}%
                 </span>
-                <p className="text-xs text-muted-foreground mt-0.5">below Africa avg ({globalAvgYield?.toLocaleString()})</p>
+                <p className="text-xs text-muted-foreground mt-0.5">below Africa avg ({globalAvgYield ? formatYield(globalAvgYield) : "—"})</p>
               </>
             ) : (
               <>
@@ -375,7 +376,7 @@ export default function CropDetail() {
                   Above avg
                 </span>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {globalAvgYield ? `Africa: ${globalAvgYield.toLocaleString()} hg/ha` : ""}
+                  {globalAvgYield ? `Africa: ${formatYield(globalAvgYield)}` : ""}
                 </p>
               </>
             )}
@@ -392,7 +393,7 @@ export default function CropDetail() {
                     <Info size={11} className="shrink-0 cursor-help opacity-60 hover:opacity-100 transition-opacity" />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[260px] text-xs">
-                    Estimated gross revenue: yield (hg/ha ÷ 10,000) × producer price ($/tonne). Does not include input costs, transport, or post-harvest losses.
+                    Estimated gross revenue: yield (t/ha) × producer price ($/tonne). Does not include input costs, transport, or post-harvest losses.
                   </TooltipContent>
                 </Tooltip>
               </p>
@@ -420,7 +421,7 @@ export default function CropDetail() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">
-                Production Trend (thousands of tonnes)
+                Production Trend (tonnes)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -435,10 +436,10 @@ export default function CropDetail() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" label={{ value: 'Production (K tonnes)', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' } }} />
+                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v: number) => formatTonnes(v).replace(" t", "")} label={{ value: 'Production (tonnes)', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' } }} />
                     <RechartsTooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
-                      formatter={(val: any) => [`${Number(val).toLocaleString()}K tonnes`, "Production"]}
+                      formatter={(val: any) => [formatTonnes(Number(val)), "Production"]}
                     />
                     <Area type="monotone" dataKey="production" stroke="hsl(var(--chart-1))" strokeWidth={2} fill="url(#prodGrad)" />
                   </AreaChart>
@@ -452,8 +453,8 @@ export default function CropDetail() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">
-                Yield Trend (hg/ha)
-                {globalAvgYield && <span className="font-normal text-muted-foreground ml-2">— Africa avg: {globalAvgYield.toLocaleString()}</span>}
+                Yield Trend (t/ha)
+                {globalAvgYield && <span className="font-normal text-muted-foreground ml-2">— Africa avg: {formatYield(globalAvgYield)}</span>}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -462,10 +463,10 @@ export default function CropDetail() {
                   <LineChart data={series}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" label={{ value: 'Yield (hg/ha)', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' } }} />
+                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={yieldTick} label={{ value: 'Yield (t/ha)', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' } }} />
                     <RechartsTooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
-                      formatter={(val: any) => [`${Number(val).toLocaleString()} hg/ha`, "Yield"]}
+                      formatter={(val: any) => [formatYield(Number(val)), "Yield"]}
                     />
                     {globalAvgYield && (
                       <ReferenceLine y={globalAvgYield} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" label={{ value: "Africa avg", position: "insideTopRight", fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
@@ -482,7 +483,7 @@ export default function CropDetail() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">
-                Area Harvested Trend (thousands of hectares)
+                Area Harvested Trend (hectares)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -491,10 +492,10 @@ export default function CropDetail() {
                   <BarChart data={series}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" label={{ value: 'Area (K ha)', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' } }} />
+                    <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v: number) => formatArea(v).replace(" ha", "")} label={{ value: 'Area (ha)', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' } }} />
                     <RechartsTooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
-                      formatter={(val: any) => [`${Number(val).toLocaleString()}K ha`, "Area"]}
+                      formatter={(val: any) => [formatArea(Number(val)), "Area"]}
                     />
                     <Bar dataKey="area" fill="hsl(var(--chart-3))" radius={[3, 3, 0, 0]} maxBarSize={40} />
                   </BarChart>
@@ -640,7 +641,7 @@ export default function CropDetail() {
                 <Link key={c.country} href={`/explore/${c.code}/${crop}`}>
                   <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-muted hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer">
                     {c.country}
-                    <span className="text-[10px] text-muted-foreground">{(c.latestYield || 0).toLocaleString()} hg/ha</span>
+                    <span className="text-[10px] text-muted-foreground">{c.latestYield ? formatYield(c.latestYield) : "—"}</span>
                     <ChevronRight size={10} className="text-muted-foreground" />
                   </span>
                 </Link>

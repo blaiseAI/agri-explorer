@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
+import { formatYield } from "@/lib/units";
 import { useToast } from "@/hooks/use-toast";
 import { useMonetization } from "@/hooks/useMonetization";
 import NewsFeed from "@/components/NewsFeed";
@@ -643,7 +644,7 @@ export default function CountryView() {
                       <div>
                         <p className="text-muted-foreground">Yield</p>
                         <div className="flex items-center gap-1.5">
-                          <p className="font-medium tabular-nums">{crop.latestYield.toLocaleString()} hg/ha</p>
+                          <p className="font-medium tabular-nums">{crop.latestYield ? formatYield(crop.latestYield) : "—"}</p>
                           {yieldGap !== null && yieldGap > 10 && (
                             <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">↓{yieldGap.toFixed(0)}%</span>
                           )}
@@ -698,7 +699,7 @@ export default function CountryView() {
                             <Info size={11} className="shrink-0 cursor-help opacity-60 hover:opacity-100 transition-opacity" />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-[240px] text-xs">
-                            Estimated gross revenue: yield (hg/ha ÷ 10,000) × producer price ($/tonne). Does not include input costs.
+                            Estimated gross revenue: yield (t/ha) × producer price ($/tonne). Does not include input costs.
                           </TooltipContent>
                         </Tooltip>
                       </div>

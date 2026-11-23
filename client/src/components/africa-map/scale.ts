@@ -27,16 +27,4 @@ export function classify(value: number | undefined, breaks: number[]): number {
   return i;
 }
 
-/** Production arrives in thousands of tonnes. */
-export function formatTonnes(kt: number): string {
-  const t = kt * 1000;
-  if (t >= 1e6) return `${(t / 1e6).toFixed(t >= 1e7 ? 0 : 1)}M t`;
-  if (t >= 1e3) return `${(t / 1e3).toFixed(t >= 1e4 ? 0 : 1)}K t`;
-  return `${Math.round(t)} t`;
-}
-
-/** Yield arrives in hectograms per hectare. */
-export function formatYield(hgHa: number): string {
-  const t = hgHa / 10000;
-  return `${t >= 10 ? t.toFixed(0) : t.toFixed(1)} t/ha`;
-}
+export { formatTonnes, formatYield } from "../../lib/units";

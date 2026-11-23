@@ -10,6 +10,7 @@ import { ChevronRight, TrendingUp, TrendingDown, Info, Search, ChevronDown, Down
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { downloadCSV } from "@/lib/export";
 import UpgradePrompt from "@/components/UpgradePrompt";
+import { formatArea, formatTonnes, formatYield, yieldTick } from "@/lib/units";
 import { useToast } from "@/hooks/use-toast";
 import { useMonetization } from "@/hooks/useMonetization";
 
@@ -36,7 +37,7 @@ function ProductionTooltip({ active, payload, label }: any) {
     <div className="rounded-lg border bg-card px-3 py-2 shadow-lg text-xs">
       <p className="font-medium text-foreground mb-1">{label}</p>
       <p className="text-muted-foreground">
-        Production: <span className="font-semibold text-foreground tabular-nums">{Number(entry.value).toLocaleString()}K tonnes</span>
+        Production: <span className="font-semibold text-foreground tabular-nums">{formatTonnes(Number(entry.value))}</span>
       </p>
     </div>
   );
@@ -51,13 +52,13 @@ function YieldTooltip({ active, payload, label, globalAvg }: any) {
       <p className="font-medium text-foreground mb-1">{label}</p>
       {yieldEntry && (
         <p className="text-muted-foreground">
-          Yield: <span className="font-semibold text-foreground tabular-nums">{Number(yieldEntry.value).toLocaleString()} hg/ha</span>
+          Yield: <span className="font-semibold text-foreground tabular-nums">{formatYield(Number(yieldEntry.value))}</span>
         </p>
       )}
       {globalAvg && (
         <p className="text-muted-foreground mt-0.5 flex items-center gap-1">
           <span className="inline-block w-3 border-t border-dashed border-muted-foreground"></span>
-          Avg: <span className="tabular-nums">{globalAvg.toLocaleString()} hg/ha</span>
+          Avg: <span className="tabular-nums">{formatYield(globalAvg)}</span>
         </p>
       )}
     </div>
@@ -392,7 +393,7 @@ export default function CropView() {
         <p className="text-sm text-muted-foreground">
           Comparing {crop} across {sortedCountries.length} countries
           {regionFilter !== "all" && ` in ${regionFilter}`}
-          {globalAvgYield && ` \u2014 Africa average yield: ${globalAvgYield.toLocaleString()} hg/ha`}
+          {globalAvgYield && ` \u2014 Africa average yield: ${formatYield(globalAvgYield)}`}
         </p>
       </div>
 
@@ -400,7 +401,7 @@ export default function CropView() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">
-            Production by Country (top {chartData.length}, thousands tonnes)
+            Production by Country (top {chartData.length}, tonnes)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -408,7 +409,7 @@ export default function CropView() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v: number) => formatTonnes(v).replace(" t", "")} />
                 <YAxis dataKey="name" type="category" tick={<TruncatedTick />} stroke="hsl(var(--muted-foreground))" width={110} />
                 <RechartsTooltip content={<ProductionTooltip />} cursor={false} />
                 <Bar dataKey="production" fill={PRODUCTION_BAR_COLOR} radius={[0, 4, 4, 0]} maxBarSize={28} />
@@ -422,10 +423,10 @@ export default function CropView() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">
-            Yield Comparison (top {yieldChartData.length}, hg/ha)
+            Yield Comparison (top {yieldChartData.length}, t/ha)
             {globalAvgYield && (
               <span className="ml-2 font-normal text-muted-foreground">
-                — dashed line = Africa average ({globalAvgYield.toLocaleString()})
+                — dashed line = Africa average ({formatYield(globalAvgYield)})
               </span>
             )}
           </CardTitle>
@@ -435,7 +436,7 @@ export default function CropView() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={yieldChartData} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={yieldTick} />
                 <YAxis dataKey="name" type="category" tick={<TruncatedTick />} stroke="hsl(var(--muted-foreground))" width={110} />
                 <RechartsTooltip content={<YieldTooltip globalAvg={globalAvgYield} />} cursor={false} />
                 {globalAvgYield && (
@@ -455,7 +456,7 @@ export default function CropView() {
           {globalAvgYield && (
             <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
               <div className="w-5 h-0 border-t-2 border-dashed border-muted-foreground"></div>
-              <span>Africa average: {globalAvgYield.toLocaleString()} hg/ha</span>
+              <span>Africa average: {formatYield(globalAvgYield)}</span>
               <span className="mx-1">|</span>
               <div className="w-3 h-3 rounded-sm" style={{ background: "hsl(152, 55%, 28%)" }}></div>
               <span>Above average</span>
@@ -499,19 +500,19 @@ export default function CropView() {
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div>
                       <p className="text-muted-foreground">Production</p>
-                      <p className="font-medium tabular-nums">{c.latestProduction.toLocaleString()}K t</p>
+                      <p className="font-medium tabular-nums">{formatTonnes(c.latestProduction)}</p>
                       <GrowthIndicator value={c.productionGrowth} />
                     </div>
                     <div>
                       <p className="text-muted-foreground">Yield</p>
-                      <p className="font-medium tabular-nums">{c.latestYield.toLocaleString()}</p>
+                      <p className="font-medium tabular-nums">{c.latestYield ? formatYield(c.latestYield) : "—"}</p>
                       {c.yieldGap > 10 && (
-                        <span className="text-[10px] text-amber-700 dark:text-amber-400">-{Number(c.yieldGap).toFixed(0)}% gap</span>
+                        <span className="text-[10px] text-amber-700 dark:text-amber-400">{Number(c.yieldGap).toFixed(0)}% below avg</span>
                       )}
                     </div>
                     <div>
                       <p className="text-muted-foreground">Area</p>
-                      <p className="font-medium tabular-nums">{c.latestArea.toLocaleString()}K ha</p>
+                      <p className="font-medium tabular-nums">{formatArea(c.latestArea)}</p>
                     </div>
                   </div>
                   {c.tradeValue ? (
@@ -540,7 +541,7 @@ export default function CropView() {
                           <Info size={11} className="shrink-0 cursor-help opacity-60 hover:opacity-100 transition-opacity" />
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-[240px] text-xs">
-                          Estimated gross revenue: yield (hg/ha ÷ 10,000) × producer price ($/tonne). Does not include input costs.
+                          Estimated gross revenue: yield (t/ha) × producer price ($/tonne). Does not include input costs.
                         </TooltipContent>
                       </Tooltip>
                     </div>
