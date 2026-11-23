@@ -9,6 +9,7 @@ Units: production in thousands of tonnes, yield in hg/ha, harvested area in thou
 - [All countries](https://afrixplorer.com/countries): every African country, grouped by region
 - [All crops](https://afrixplorer.com/crops): every tracked crop with African production totals
 - [About the data](https://afrixplorer.com/about): sources, methodology and refresh schedule
+- [Developers](https://afrixplorer.com/developers): upcoming REST API and MCP server for this data (waitlist)
 
 ## Page types
 

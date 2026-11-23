@@ -127,7 +127,7 @@ function baseDatasetFields() {
 
 // ──────────────────── Route Validation ────────────────────
 
-const STATIC_ROUTES = new Set(["/", "", "/welcome", "/pricing", "/sign-in", "/sign-up", "/countries", "/crops", "/about", "/terms", "/privacy"]);
+const STATIC_ROUTES = new Set(["/", "", "/welcome", "/pricing", "/sign-in", "/sign-up", "/countries", "/crops", "/about", "/developers", "/terms", "/privacy"]);
 
 export const RANKING_CROPS = new Set(RANKING_CROP_LIST);
 
@@ -401,6 +401,17 @@ export function injectSEO(url: string, template: string): string {
       ]));
       bodyContent = `<h1>About Afrixplorer</h1>
     <p>What this platform is, where the data comes from, and how it is maintained. Afrixplorer draws on FAOSTAT, the World Bank, UN Comtrade and WFP, refreshed every two weeks.</p>`;
+    }
+    // /developers — API and MCP waitlist
+    else if (parts[0] === "developers") {
+      title = "African Crop Data API & MCP Server | Afrixplorer";
+      description = "Get early access to the Afrixplorer API and MCP server: crop production, yield and area for 54 African countries and 136 crops, from FAOSTAT and the World Bank.";
+      schemas.push(buildBreadcrumbs([
+        { name: "Home", url: "/" },
+        { name: "Developers", url: "/developers" },
+      ]));
+      bodyContent = `<h1>African crop data, as an API and an MCP server</h1>
+    <p>Production, yield, harvested area and growth for 54 African countries and 136 crops, from FAOSTAT and the World Bank. Query it from your code, or from Claude, ChatGPT or Cursor. Join the waitlist for early access.</p>`;
     }
     // /terms
     else if (parts[0] === "terms") {

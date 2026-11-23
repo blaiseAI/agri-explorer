@@ -48,6 +48,7 @@ export default function PrivacyPage() {
         <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
           <li><strong className="text-foreground">Google Analytics</strong> — usage analytics</li>
           <li><strong className="text-foreground">Convex / better-auth</strong> — account authentication and data storage infrastructure</li>
+          <li><strong className="text-foreground">Web3Forms</strong> — delivers API waitlist sign-ups (email, and anything else you choose to enter) to us by email</li>
         </ul>
         <p className="text-sm leading-relaxed text-muted-foreground">
           We do not sell your personal data to third parties.

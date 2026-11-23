@@ -19,6 +19,7 @@ const PricingPage = lazy(() => import("@/pages/PricingPage"));
 const SignInPage = lazy(() => import("@/pages/SignInPage"));
 const SignUpPage = lazy(() => import("@/pages/SignUpPage"));
 const AboutPage = lazy(() => import("@/pages/AboutPage"));
+const DevelopersPage = lazy(() => import("@/pages/DevelopersPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -34,6 +35,7 @@ function AppRouter() {
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
           <Route path="/about" component={AboutPage} />
+          <Route path="/developers" component={DevelopersPage} />
           <Route path="/terms" component={TermsPage} />
           <Route path="/privacy" component={PrivacyPage} />
           <Route path="/countries" component={CountryView} />

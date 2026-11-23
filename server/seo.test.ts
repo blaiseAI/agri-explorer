@@ -140,7 +140,7 @@ describe("injectSEO — titles, descriptions and schema (second audit pass)", ()
   });
 
   it("server-renders an H1 on the static pages", () => {
-    for (const url of ["/about", "/pricing", "/terms", "/privacy"]) {
+    for (const url of ["/about", "/developers", "/pricing", "/terms", "/privacy"]) {
       const body = injectSEO(url, template).split('<div id="root">')[1] || "";
       expect((body.match(/<h1>/g) || []).length, url).toBe(1);
     }

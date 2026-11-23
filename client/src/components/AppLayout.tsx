@@ -179,6 +179,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link href="/countries" className="hover:text-foreground transition-colors">Countries</Link>
               <Link href="/crops" className="hover:text-foreground transition-colors">Crops</Link>
               <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
+              <Link href="/developers" className="hover:text-foreground transition-colors">API</Link>
               {isMonetizationEnabled && (
                 <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
               )}
